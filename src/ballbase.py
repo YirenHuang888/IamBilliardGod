@@ -5,65 +5,48 @@ Created on Wed Jul 24 11:53:32 2024
 @author: Administrator
 """
 import pygame
-from const import screen_size
+from const import screen_size,BLACK,WHITE
 from data_dic import data
 
-class Ball(pygame.sprite.Sprite):
+class Ball():
     def __init__(self, pos, ID):
-        super().__init__()
         self.id = ID
         self.radius = 18
         self.pos = pygame.Vector2(pos)  
         self.color = self.getData()['COLOR']
         self.speed = pygame.Vector2(0, 0)  
         self.controlable = self.getData()['CTRL']
-        self.createSurface(pos)
-    
-    def createSurface(self, pos):
-        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, self.color, (int(self.radius), int(self.radius)), int(self.radius))
-        self.mask = pygame.mask.from_surface(self.image)
-        self.rect = self.image.get_rect(center=pos)
     
     def move(self,group):
         if self.speed:
-            dt = pygame.time.Clock().tick(60) / 1000.0  # 计算时间步长（以秒为单位）
-            num_steps = 10  # 将每帧时间分解为10个小步长
-            step_size = dt / num_steps  # 每个小步长的时间
-            # print(dt,num_steps,step_size)
+            # print('我是',self.id,'号')
+            num_steps = 30  # 将每帧时间分解为20个小步长
         
-            # for _ in range(num_steps):
-                # 计算每个小步长的速度
-                # print('第{}次循环'.format(_))
-            self.pos += self.speed #* step_size
-            # self.rect.center = (self.pos.x,self.pos.y)
-            
+            for _ in range(num_steps):
+                # print('----\n这是第{}遍循环'.format(_))
+                delta_x = self.speed / num_steps
+                # print('这个循环，我{}走出去了{}像素\n----'.format(self.id, delta_x.length()))
+                self.pos += delta_x
+                
+                self.collide_side()
+                other_ball = self.collide_ball(group)
+                if other_ball:
+                    self.speed_exchange2(other_ball)
+                    return True
+            # print('这一帧，我{}总共走出去了{}像素'.format(self.id, self.speed.length()))
             self.fric()
-            self.collide_side()
-            self.collide_ball(group)
-
             if self.speed.length() <= 0.2:
                 self.speed = pygame.Vector2(0, 0)
     
     def collide_ball(self, group):
-        for sprite in group:
-            if sprite != self and pygame.sprite.collide_circle(self, sprite):
-                print('-----\n',
-                      self.id,'撞到了：',sprite.id,
-                      '\n跟ta的rect距离是：',pygame.Vector2(self.rect.center).distance_to(pygame.Vector2(sprite.rect.center)),
-                      '\n跟ta的pos距离是：',self.pos.distance_to(sprite.pos),
-                      '\n-----\n'
-                      )
-                # 防止球体重叠，调整位置
-                normal = sprite.pos - self.pos
-                distance = normal.length()
-                overlap = self.radius + sprite.radius - distance
-                if overlap > 0:
-                    correction = normal * (overlap / 2)
-                    self.pos -= correction
-                    sprite.pos += correction
-
-                self.speed_exchange2(sprite)
+        for other_ball in group:
+            if other_ball != self and self.pos.distance_to(other_ball.pos) < self.radius * 2 :
+                # print('-----\n',
+                #       self.id,'撞到了：',other_ball.id,
+                #       '\n跟ta的距离是：',self.pos.distance_to(other_ball.pos),
+                #       '\n-----\n'
+                #       )
+                return other_ball
                         
     def speed_exchange2(self, other):
         # 计算法线向量
@@ -84,7 +67,7 @@ class Ball(pygame.sprite.Sprite):
             return
     
         # 碰撞后速度的计算 (弹性碰撞)
-        restitution = 1  # 弹性系数，为1表示完全弹性碰撞
+        restitution = 1 # 弹性系数，为1表示完全弹性碰撞
         impulse_magnitude = -(1 + restitution) * velocity_along_normal
         impulse_magnitude /= (1 / self.radius + 1 / other.radius)
     
@@ -111,7 +94,15 @@ class Ball(pygame.sprite.Sprite):
         return data[self.id]
 
     def draw(self, screen):
-        # print('211')
         pygame.draw.circle(screen, self.color, (self.pos.x,self.pos.y), int(self.radius))
+        # print('211')
+        if not self.controlable:
+            ball_id = pygame.font.Font(None, 18)
+            textImage = ball_id.render(str(self.id), True, BLACK)
+            screen.blit(textImage, (self.pos.x-4,self.pos.y-1))
+            textImage = ball_id.render(str(self.id), True, WHITE)
+            screen.blit(textImage, (self.pos.x-4,self.pos.y-4))
+
+
 
     

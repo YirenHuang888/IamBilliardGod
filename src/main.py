@@ -16,7 +16,6 @@ screen = pygame.display.set_mode(screen_size)
 game = Game(screen)
 pygame.display.set_caption("台球游戏")
 clock = pygame.time.Clock()
-
 game.startGame()
 
 while True:
@@ -25,9 +24,25 @@ while True:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            game.mouseClickHandler(event.button)
-    
+            game.xuli = True
+            t = 0
+        elif event.type == pygame.MOUSEBUTTONUP:
+            game.xuli = False
+            game.fashe(t)
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                game.paused = not game.paused
+            elif event.key == pygame.K_RETURN:
+                game.startGame()
+
     # 刷新屏幕
+    if game.paused:
+        continue
+    
+    if game.xuli:      
+        t += 0.04
+        if t >= 3:
+            t = 3
     game.update()
     screen.fill(GREEN)
     fps = clock.get_fps()

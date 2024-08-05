@@ -14,10 +14,11 @@ from const import BLACK,WHITE
 class Game(object):
     def __init__(self, sc):
         self.sc = sc
-        self.Balls = pygame.sprite.Group()
+        self.Balls = []
         self.Balls_get = []
         self.white_text = pygame.font.Font(None, 30)
-
+        self.paused = False
+        self.xuli = False
         
     def draw(self,fps):
         for ball in self.Balls:
@@ -30,43 +31,45 @@ class Game(object):
     
     def update(self):
         for ball in self.Balls:
-            ball.move(self.Balls)
+             c = ball.move(self.Balls)
+             if c:
+                 continue
+                 print('暂停了，现在正是{}号在move'.format(ball.id))
+                 self.pause()
+                 # break
 
         
     def startGame(self):
+        self.Balls.clear()
         for i in range(len(data)):
             pos = data[i]['LOCATION']
             b = Ball(pos,i)
-            self.Balls.add(b)
-            if i >0:
-                break
+            self.Balls.append(b)
+            # if i >3:
+            #     break
+        # print(self.Balls)
         
-    
-    def mouseClickHandler(self, btn):
+    def fashe(self, xuli_time):
         mousePos = pygame.mouse.get_pos()
         for ball in self.Balls:
             if ball.controlable:
                 pos = ball.pos
                 angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                rate = 0
-                if btn == 1:
-                    rate = 18
-                elif btn == 3:
-                    rate = -18
+                rate = 10 * xuli_time
                 ball.speed[0] = rate * math.cos(angle)
                 ball.speed[1] = rate * math.sin(angle)
         
     def renderFont(self,fps):
+        # FPS显示
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, BLACK)
-        self.sc.blit(textImage, (13, 63))
+        self.sc.blit(textImage, (1280, 23))
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, WHITE)
-        self.sc.blit(textImage, (10, 60))
-
+        self.sc.blit(textImage, (1280, 20))
+        
         for ball in self.Balls:
             if ball.controlable:
                 wt_speed = ball.speed
                 wt_pos = ball.pos
-                wt_rect = ball.rect.center
                 #速度表
                 textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, BLACK)
                 self.sc.blit(textImage, (13, 23))
@@ -77,11 +80,9 @@ class Game(object):
                 self.sc.blit(textImage, (13, 43))
                 textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, WHITE)
                 self.sc.blit(textImage, (10, 40))
-                #rect坐标表
-                textImage = self.white_text.render(str(wt_rect), True, BLACK)
-                self.sc.blit(textImage, (223, 43))
-                textImage = self.white_text.render(str(wt_rect), True, WHITE)
-                self.sc.blit(textImage, (220, 40))
+    
+    def pause(self):
+        self.paused = True
 
         
         
