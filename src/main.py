@@ -23,26 +23,29 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        
+        #鼠标左键按下蓄力，松开击打
         elif event.type == pygame.MOUSEBUTTONDOWN:
             game.xuli = True
             t = 0
         elif event.type == pygame.MOUSEBUTTONUP:
             game.xuli = False
             game.fashe(t)
+        
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE:# 空格暂停
                 game.paused = not game.paused
-            elif event.key == pygame.K_RETURN:
+            elif event.key == pygame.K_RETURN:# 重启游戏
                 game.startGame()
-
-    # 刷新屏幕
+    # 暂停
     if game.paused:
         continue
-    
+    # 蓄力击打
     if game.xuli:      
         t += 0.04
         if t >= 3:
             t = 3
+    # 刷新屏幕
     game.update()
     screen.fill(GREEN)
     fps = clock.get_fps()

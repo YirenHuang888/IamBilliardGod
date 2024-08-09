@@ -6,21 +6,21 @@ Created on Wed Jul 24 11:53:32 2024
 """
 import pygame
 from const import screen_size,BLACK,WHITE
-from data_dic import data
+from data_dic import ball_data
 
 class Ball():
     def __init__(self, pos, ID):
         self.id = ID
         self.radius = 18
         self.pos = pygame.Vector2(pos)  
-        self.color = self.getData()['COLOR']
+        self.color = self.getBallData('COLOR')
         self.speed = pygame.Vector2(0, 0)  
-        self.controlable = self.getData()['CTRL']
+        self.controlable = self.getBallData('CTRL')
     
     def move(self,group):
         if self.speed:
             # print('我是',self.id,'号')
-            num_steps = 30  # 将每帧时间分解为20个小步长
+            num_steps = 100  # 将每帧时间分解为20个小步长
         
             for _ in range(num_steps):
                 # print('----\n这是第{}遍循环'.format(_))
@@ -32,6 +32,7 @@ class Ball():
                 other_ball = self.collide_ball(group)
                 if other_ball:
                     self.speed_exchange2(other_ball)
+                    self.fric()
                     return True
             # print('这一帧，我{}总共走出去了{}像素'.format(self.id, self.speed.length()))
             self.fric()
@@ -90,8 +91,8 @@ class Ball():
         if self.pos.y - self.radius < 0 or self.pos.y + self.radius > screen_size[1]:
             self.speed.y = -self.speed.y * 0.95
     
-    def getData(self):
-        return data[self.id]
+    def getBallData(self,key):
+        return ball_data[self.id][key]
 
     def draw(self, screen):
         pygame.draw.circle(screen, self.color, (self.pos.x,self.pos.y), int(self.radius))

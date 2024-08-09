@@ -7,8 +7,8 @@ Created on Wed Jul 24 11:06:15 2024
 import pygame
 import math
 from ballbase import Ball
-from data_dic import data
-from const import BLACK,WHITE
+from data_dic import ball_data,arcSide_data,lineSide_data
+from const import BLACK,WHITE,GRAY,HOLE
 
 
 class Game(object):
@@ -24,29 +24,56 @@ class Game(object):
         for ball in self.Balls:
             ball.draw(self.sc)
         # print(self.Balls)
-        self.renderFont(fps)
         # for eachhole in HOLE:
-        #     pygame.draw.circle(self.sc, GRAY, eachhole, 20)
+        #     pygame.draw.circle(self.sc, GRAY, eachhole, 36)
+        for i in range(len(arcSide_data)):
+            color = arcSide_data[i+1]['COLOR']
+            rect = arcSide_data[i+1]['RECT']
+            start_angle = arcSide_data[i+1]['START_ANGLE']
+            stop_angle = arcSide_data[i+1]['STOP_ANGLE']
+            width = arcSide_data[i+1]['WIDTH']
+            pygame.draw.arc(self.sc, 
+                            color, 
+                            rect, 
+                            start_angle, 
+                            stop_angle, 
+                            width)
+        
+        for i in range(len(lineSide_data)):
+            color = lineSide_data[i+1]['COLOR']
+            start_point = lineSide_data[i+1]['START_POINT']
+            stop_point = lineSide_data[i+1]['STOP_POINT']
+            width = lineSide_data[i+1]['WIDTH']
+            pygame.draw.line(self.sc, 
+                            color, 
+                            start_point, 
+                            stop_point, 
+                            width)
 
+        self.renderFont(fps)
     
     def update(self):
         for ball in self.Balls:
              c = ball.move(self.Balls)
              if c:
                  continue
-                 print('暂停了，现在正是{}号在move'.format(ball.id))
-                 self.pause()
-                 # break
-
         
     def startGame(self):
         self.Balls.clear()
-        for i in range(len(data)):
-            pos = data[i]['LOCATION']
+        # pygame.draw.arc(self.sc, 
+        #                 (0,0,0), 
+        #                 (128.8262,73.0531,18.8978,18.8978),
+        #                 1.5707963267948966, 
+        #                 2.356194490192345, 
+        #                 2)
+
+        for i in range(len(ball_data)):
+            pos = ball_data[i]['LOCATION']
             b = Ball(pos,i)
             self.Balls.append(b)
             # if i >3:
             #     break
+
         # print(self.Balls)
         
     def fashe(self, xuli_time):
