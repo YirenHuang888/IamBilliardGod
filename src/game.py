@@ -28,7 +28,7 @@ class Game(object):
         #     pygame.draw.circle(self.sc, GRAY, eachhole, 36)
         for i in range(len(arcSide_data)):
             color = arcSide_data[i+1]['COLOR']
-            rect = arcSide_data[i+1]['RECT']
+            rect = [round(i) for i in arcSide_data[i+1]['RECT']]
             start_angle = arcSide_data[i+1]['START_ANGLE']
             stop_angle = arcSide_data[i+1]['STOP_ANGLE']
             width = arcSide_data[i+1]['WIDTH']
