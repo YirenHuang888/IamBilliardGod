@@ -7,6 +7,8 @@ Created on Wed Jul 24 11:06:15 2024
 import pygame
 import math
 from ballbase import Ball
+from side import Side
+from stick import Stick
 from data_dic import ball_data,arcSide_data,lineSide_data
 from const import BLACK,WHITE,GRAY,HOLE
 
@@ -15,42 +17,57 @@ class Game(object):
     def __init__(self, sc):
         self.sc = sc
         self.Balls = []
+        self.Sides = []
         self.Balls_get = []
         self.white_text = pygame.font.Font(None, 30)
         self.paused = False
-        self.xuli = False
+        self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
+        self.static = True
+        self.stick_image = pygame.image.load("E:/Billiard God/IamBilliardGod/pic/stick.png").convert_alpha()
+        self.awaypos = (0,0)
+
         
-    def draw(self,fps):
+    def draw(self,fps,mousePos):
+        count = 0
+        #球体绘制
         for ball in self.Balls:
             ball.draw(self.sc)
+            
+            if ball.speed:
+                self.static = False
+            else:
+                count += 1
+                if count == len(self.Balls):
+                    self.static = True
+                        
+            if ball.controlable:
+                pos = ball.pos
+        #边界绘制
+        for side in self.Sides:
+            side.draw(self.sc)
+
+        
         # print(self.Balls)
         # for eachhole in HOLE:
         #     pygame.draw.circle(self.sc, GRAY, eachhole, 36)
-        for i in range(len(arcSide_data)):
-            color = arcSide_data[i+1]['COLOR']
-            rect = [round(i) for i in arcSide_data[i+1]['RECT']]
-            start_angle = arcSide_data[i+1]['START_ANGLE']
-            stop_angle = arcSide_data[i+1]['STOP_ANGLE']
-            width = arcSide_data[i+1]['WIDTH']
-            pygame.draw.arc(self.sc, 
-                            color, 
-                            rect, 
-                            start_angle, 
-                            stop_angle, 
-                            width)
         
-        for i in range(len(lineSide_data)):
-            color = lineSide_data[i+1]['COLOR']
-            start_point = lineSide_data[i+1]['START_POINT']
-            stop_point = lineSide_data[i+1]['STOP_POINT']
-            width = lineSide_data[i+1]['WIDTH']
-            pygame.draw.line(self.sc, 
-                            color, 
-                            start_point, 
-                            stop_point, 
-                            width)
-
+        
+        # 文字信息显示
         self.renderFont(fps)
+        
+        if not self.charge:# 只有处在False时,即平常时
+            # 计算白球球心与鼠标的角度
+            angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+            # 旋转球杆子贴图
+            self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
+            self.rotated_stick.set_colorkey(WHITE)
+            self.stick_rect = self.rotated_stick.get_rect(center=pos)
+            # 绘制旋转后的球杆子
+            if self.static:
+                self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
+                pygame.draw.circle(self.sc, GRAY, pos, 3)
+
+
     
     def update(self):
         for ball in self.Balls:
@@ -60,31 +77,59 @@ class Game(object):
         
     def startGame(self):
         self.Balls.clear()
-        # pygame.draw.arc(self.sc, 
-        #                 (0,0,0), 
-        #                 (128.8262,73.0531,18.8978,18.8978),
-        #                 1.5707963267948966, 
-        #                 2.356194490192345, 
-        #                 2)
+        self.Sides.clear()
 
         for i in range(len(ball_data)):
             pos = ball_data[i]['LOCATION']
+            if i == 0:
+                self.awaypos = pos
             b = Ball(pos,i)
             self.Balls.append(b)
             # if i >3:
             #     break
+        
+        for arc in arcSide_data.values():
+            arcside = Side(True, arc)
+            self.Sides.append(arcside)
+        for line in lineSide_data.values():
+            lineside = Side(False, line)
+            self.Sides.append(lineside)
 
         # print(self.Balls)
-        
-    def fashe(self, xuli_time):
-        mousePos = pygame.mouse.get_pos()
-        for ball in self.Balls:
-            if ball.controlable:
-                pos = ball.pos
-                angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                rate = 10 * xuli_time
-                ball.speed[0] = rate * math.cos(angle)
-                ball.speed[1] = rate * math.sin(angle)
+    
+    def xuli(self,xuli_time, mousePos):
+        if self.charge == True:# 蓄力情况时
+            for ball in self.Balls:
+                if ball.controlable:
+                    pos = ball.pos
+                    angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+                    awayspeed = 50 * xuli_time
+                    # print(f'白球坐标为：{pos}，贴图中心坐标为：{self.stick_rect.center}')
+                    self.awaypos = (self.stick_rect.x + awayspeed * -math.cos(angle),
+                                    self.stick_rect.y + awayspeed * -math.sin(angle))
+                    
+                    self.sc.blit(self.rotated_stick, self.awaypos)
+                    break
+            xuli_time += 0.04
+            if xuli_time >= 3:
+                xuli_time = 3
+            return xuli_time
+    
+    def fashe(self, xuli_time, mousePos):
+        if self.charge == 'Restore':
+            for ball in self.Balls:
+                if ball.controlable:
+                    pos = ball.pos
+                    angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+                    backspeed = 10
+                    self.awaypos = (self.awaypos[0] + backspeed * math.cos(angle),
+                                    self.awaypos[1] + backspeed * math.sin(angle))
+                    self.sc.blit(self.rotated_stick, self.awaypos)
+                    if pos.distance_to(self.awaypos) <= ball.radius:
+                        rate = 10 * xuli_time
+                        ball.speed[0] = rate * math.cos(angle)
+                        ball.speed[1] = rate * math.sin(angle)
+                    break
         
     def renderFont(self,fps):
         # FPS显示
@@ -107,6 +152,7 @@ class Game(object):
                 self.sc.blit(textImage, (13, 43))
                 textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, WHITE)
                 self.sc.blit(textImage, (10, 40))
+                break
     
     def pause(self):
         self.paused = True

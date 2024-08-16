@@ -17,8 +17,13 @@ game = Game(screen)
 pygame.display.set_caption("台球游戏")
 clock = pygame.time.Clock()
 game.startGame()
+t = 0
 
 while True:
+    # 常用变量
+    fps = clock.get_fps()
+    mousePos = pygame.mouse.get_pos()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -26,30 +31,32 @@ while True:
         
         #鼠标左键按下蓄力，松开击打
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            game.xuli = True
             t = 0
+            if game.static:# 全场的球体都静止
+                game.charge = True
         elif event.type == pygame.MOUSEBUTTONUP:
-            game.xuli = False
-            game.fashe(t)
+            if game.charge:
+                game.charge = 'Restore'
         
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:# 空格暂停
                 game.paused = not game.paused
-            elif event.key == pygame.K_RETURN:# 重启游戏
+            elif event.key == pygame.K_RETURN:# 回车重启游戏
                 game.startGame()
     # 暂停
     if game.paused:
         continue
-    # 蓄力击打
-    if game.xuli:      
-        t += 0.04
-        if t >= 3:
-            t = 3
-    # 刷新屏幕
-    game.update()
+    
+    # 刷新屏幕1
     screen.fill(GREEN)
-    fps = clock.get_fps()
-    game.draw(fps)
+    game.update()
+    game.draw(fps,mousePos)
+    
+    # 蓄力击打
+    t = game.xuli(t,mousePos)
+    game.fashe(t,mousePos)
+    
+    # 刷新屏幕2
     pygame.display.flip()
     
     # 控制帧率

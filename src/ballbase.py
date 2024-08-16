@@ -19,22 +19,21 @@ class Ball():
     
     def move(self,group):
         if self.speed:
-            # print('我是',self.id,'号')
-            num_steps = 100  # 将每帧时间分解为20个小步长
+            num_steps = 100  # 将每帧时间分解为100个小步长
         
-            for _ in range(num_steps):
-                # print('----\n这是第{}遍循环'.format(_))
+            for _ in range(num_steps):# 将1帧的运动再细分100份
                 delta_x = self.speed / num_steps
-                # print('这个循环，我{}走出去了{}像素\n----'.format(self.id, delta_x.length()))
                 self.pos += delta_x
                 
+                #边界碰撞
                 self.collide_side()
+                #球体间碰撞
                 other_ball = self.collide_ball(group)
                 if other_ball:
                     self.speed_exchange2(other_ball)
                     self.fric()
                     return True
-            # print('这一帧，我{}总共走出去了{}像素'.format(self.id, self.speed.length()))
+            
             self.fric()
             if self.speed.length() <= 0.2:
                 self.speed = pygame.Vector2(0, 0)
