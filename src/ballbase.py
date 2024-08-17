@@ -17,7 +17,7 @@ class Ball():
         self.speed = pygame.Vector2(0, 0)  
         self.controlable = self.getBallData('CTRL')
     
-    def move(self,group):
+    def move(self,ball_group,side_group):
         if self.speed:
             num_steps = 100  # 将每帧时间分解为100个小步长
         
@@ -26,15 +26,17 @@ class Ball():
                 self.pos += delta_x
                 
                 #边界碰撞
-                self.collide_side()
+                side = self.collide_side(side_group)
+                if side:
+                    self.speed_exchange3(side)
                 #球体间碰撞
-                other_ball = self.collide_ball(group)
+                other_ball = self.collide_ball(ball_group)
                 if other_ball:
                     self.speed_exchange2(other_ball)
-                    self.fric()
+                    self.fric(0.95)
                     return True
             
-            self.fric()
+            self.fric(0.99)
             if self.speed.length() <= 0.2:
                 self.speed = pygame.Vector2(0, 0)
     
@@ -65,37 +67,50 @@ class Ball():
         # 如果速度分量小于0，说明球体在分离，不处理
         if velocity_along_normal < 0:
             return
-    
         # 碰撞后速度的计算 (弹性碰撞)
         restitution = 1 # 弹性系数，为1表示完全弹性碰撞
-        impulse_magnitude = -(1 + restitution) * velocity_along_normal
-        impulse_magnitude /= (1 / self.radius + 1 / other.radius)
-    
+        impulse_magnitude = -(1 + restitution) * velocity_along_normal / 2
         impulse_vector = normal * impulse_magnitude
     
         # 更新球体的速度
-        self.speed += impulse_vector / self.radius
-        other.speed -= impulse_vector / other.radius
+        self.speed += impulse_vector
+        if isinstance(self,type(other)):
+            other.speed -= impulse_vector
     
 
     # 摩擦力
-    def fric(self):
+    def fric(self,f):
         if self.speed.length() > 0.2:  
-            self.speed *= 0.99  
+            self.speed *= f  
      
-    def collide_side(self):
-        # 边界检测
-        if self.pos.x - self.radius < 0 or self.pos.x + self.radius > screen_size[0]:
-            self.speed.x = -self.speed.x * 0.95
-        if self.pos.y - self.radius < 0 or self.pos.y + self.radius > screen_size[1]:
-            self.speed.y = -self.speed.y * 0.95
+    # 边界检测
+    def collide_side(self,group):
+        print('---start---')
+        i = 0
+        for side in group:
+            i+=1
+            print(f'我是第{i}个边界，')
+            print(side.distance2ball(self))
+            if (side.IFcollide and
+                side.distance2ball(self) <= self.radius
+                ):
+                return side
+        print('---end---')
+            
+    def speed_exchange3(self,side):
+        if side.IFarc:
+            self.speed_exchange2(side)
+        else:
+            if side.toward == 'shu':# 竖着的
+                self.speed.x = -self.speed.x * 0.95 
+            elif side.toward == 'heng':# 横着的
+                self.speed.y = -self.speed.y * 0.95
     
     def getBallData(self,key):
         return ball_data[self.id][key]
 
     def draw(self, screen):
         pygame.draw.circle(screen, self.color, (self.pos.x,self.pos.y), int(self.radius))
-        # print('211')
         if not self.controlable:
             ball_id = pygame.font.Font(None, 18)
             textImage = ball_id.render(str(self.id), True, BLACK)

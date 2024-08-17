@@ -289,73 +289,73 @@ lineSide_data = {
      'COLOR': BLACK,
      'START_POINT': (710.7609,76.3125),
      'STOP_POINT': (713.2177,85.0576),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    2: {
      'COLOR': BLACK,
      'START_POINT': (653.9612,76.3125),
      'STOP_POINT': (651.5044,85.0576),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    3: {
      'COLOR': BLACK,
      'START_POINT': (713.2732,683.1117),
      'STOP_POINT': (710.8002,692.0267),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    4: {
      'COLOR': BLACK,
      'START_POINT': (651.5276,683.1117),
      'STOP_POINT': (654.0006,692.0267),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    5: {
      'COLOR': BLACK,
      'START_POINT': (1272.737,644.7291),
      'STOP_POINT': (1280.9862,652.9783),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    6: {
      'COLOR': BLACK,
      'START_POINT': (84.0587,115.3495),
      'STOP_POINT': (94.616,125.9067),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    7: {
      'COLOR': BLACK,
      'START_POINT': (1235.6503,89.1834),
      'STOP_POINT': (1246.3347,78.4989),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    8: {
      'COLOR': BLACK,
      'START_POINT': (120.9093,78.4989),
      'STOP_POINT': (131.5937,89.1834),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    9: {
      'COLOR': BLACK,
      'START_POINT': (1272.737,126.5459),
      'STOP_POINT': (1283.5036,115.7793),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    10: {
      'COLOR': BLACK,
      'START_POINT': (118.5354,690.2585),
      'STOP_POINT': (129.8378,678.9561),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    11: {
      'COLOR': BLACK,
      'START_POINT': (1232.2285,678.9561),
      'STOP_POINT': (1243.5309,690.2585),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    12: {
      'COLOR': BLACK,
      'START_POINT': (80.8563,652.98),
      'STOP_POINT': (94.6159,639.2204),
-     'COLLIDE': True
+     'COLLIDE': False
   },
    13: {
      'COLOR': BLACK,

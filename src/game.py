@@ -67,11 +67,10 @@ class Game(object):
             pygame.draw.rect(self.sc, (255,0,0), self.stick_rect, 2)
             pygame.draw.circle(self.sc, GRAY, pos, 3)
 
-
     
     def update(self):
         for ball in self.Balls:
-             c = ball.move(self.Balls)
+             c = ball.move(self.Balls,self.Sides)
              if c:
                  continue
         
@@ -85,6 +84,8 @@ class Game(object):
                 self.awaypos = pos
             b = Ball(pos,i)
             self.Balls.append(b)
+            # if type(b) == Ball:
+            #     print(type(b))
             # if i >3:
             #     break
         
