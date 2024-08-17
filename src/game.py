@@ -55,17 +55,17 @@ class Game(object):
         # 文字信息显示
         self.renderFont(fps)
         
-        if not self.charge:# 只有处在False时,即平常时
-            # 计算白球球心与鼠标的角度
-            angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-            # 旋转球杆子贴图
-            self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
-            self.rotated_stick.set_colorkey(WHITE)
-            self.stick_rect = self.rotated_stick.get_rect(center=pos)
-            # 绘制旋转后的球杆子
-            if self.static:
-                self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
-                pygame.draw.circle(self.sc, GRAY, pos, 3)
+        # 计算白球球心与鼠标的角度
+        angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+        # 旋转球杆子贴图
+        self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
+        self.rotated_stick.set_colorkey(WHITE)
+        self.stick_rect = self.rotated_stick.get_rect(center=pos)
+        # 绘制旋转后的球杆子
+        if self.static and not self.charge:# 所有球静止，且没有蓄力没有发射
+            self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
+            pygame.draw.rect(self.sc, (255,0,0), self.stick_rect, 2)
+            pygame.draw.circle(self.sc, GRAY, pos, 3)
 
 
     
@@ -98,38 +98,65 @@ class Game(object):
         # print(self.Balls)
     
     def xuli(self,xuli_time, mousePos):
-        if self.charge == True:# 蓄力情况时
-            for ball in self.Balls:
-                if ball.controlable:
-                    pos = ball.pos
-                    angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                    awayspeed = 50 * xuli_time
-                    # print(f'白球坐标为：{pos}，贴图中心坐标为：{self.stick_rect.center}')
-                    self.awaypos = (self.stick_rect.x + awayspeed * -math.cos(angle),
-                                    self.stick_rect.y + awayspeed * -math.sin(angle))
-                    
-                    self.sc.blit(self.rotated_stick, self.awaypos)
-                    break
-            xuli_time += 0.04
-            if xuli_time >= 3:
-                xuli_time = 3
-            return xuli_time
+        for ball in self.Balls:
+            if ball.controlable:
+                pos = ball.pos
+                angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+                awayDistance = 50 * xuli_time
+                # print(f'白球坐标为：{pos}，贴图中心坐标为：{self.stick_rect.center}')
+                self.awaypos = (self.stick_rect.centerx + awayDistance * -math.cos(angle),
+                                self.stick_rect.centery + awayDistance * -math.sin(angle))
+                
+                self.sc.blit(self.rotated_stick, 
+                             (self.awaypos[0]-self.stick_rect.width/2,
+                              self.awaypos[1]-self.stick_rect.height/2)
+                             )
+                # pygame.draw.rect(self.sc,
+                #                  (255,0,0),
+                #                  (self.awaypos[0]-self.stick_rect.width/2,
+                #                   self.awaypos[1]-self.stick_rect.height/2,
+                #                   self.stick_rect.width,
+                #                   self.stick_rect.height),
+                #                  2)
+                # pygame.draw.circle(self.sc, GRAY, self.awaypos, 3)
+
+                break
+        xuli_time += 0.04
+        if xuli_time >= 3:
+            xuli_time = 3
+        return xuli_time
     
     def fashe(self, xuli_time, mousePos):
-        if self.charge == 'Restore':
-            for ball in self.Balls:
-                if ball.controlable:
-                    pos = ball.pos
-                    angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                    backspeed = 10
-                    self.awaypos = (self.awaypos[0] + backspeed * math.cos(angle),
-                                    self.awaypos[1] + backspeed * math.sin(angle))
-                    self.sc.blit(self.rotated_stick, self.awaypos)
+        for ball in self.Balls:
+            if ball.controlable:
+                pos = ball.pos
+                angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+                backDistance = 50
+                num_steps = 100  # 将每帧时间分解为100个小步长
+            
+                for _ in range(num_steps):# 将1帧的运动再细分100份
+                    delta_d = backDistance / num_steps
+                    self.awaypos = (self.awaypos[0] + delta_d * math.cos(angle),
+                                    self.awaypos[1] + delta_d * math.sin(angle))
+                    self.sc.blit(self.rotated_stick,
+                                 (self.awaypos[0]-self.stick_rect.width/2,
+                                  self.awaypos[1]-self.stick_rect.height/2)
+                                 )
+                    # pygame.draw.rect(self.sc,
+                    #                  (255,0,0),
+                    #                  (self.awaypos[0]-self.stick_rect.width/2,
+                    #                   self.awaypos[1]-self.stick_rect.height/2,
+                    #                   self.stick_rect.width,
+                    #                   self.stick_rect.height),
+                    #                  2)
+                    # pygame.draw.circle(self.sc, GRAY, self.awaypos, 3)
+    
                     if pos.distance_to(self.awaypos) <= ball.radius:
                         rate = 10 * xuli_time
                         ball.speed[0] = rate * math.cos(angle)
                         ball.speed[1] = rate * math.sin(angle)
-                    break
+                        self.charge = False
+                break
         
     def renderFont(self,fps):
         # FPS显示

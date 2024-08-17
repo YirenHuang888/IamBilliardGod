@@ -17,7 +17,6 @@ game = Game(screen)
 pygame.display.set_caption("台球游戏")
 clock = pygame.time.Clock()
 game.startGame()
-t = 0
 
 while True:
     # 常用变量
@@ -35,7 +34,7 @@ while True:
             if game.static:# 全场的球体都静止
                 game.charge = True
         elif event.type == pygame.MOUSEBUTTONUP:
-            if game.charge:
+            if game.charge:# 鼠标左键被按下
                 game.charge = 'Restore'
         
         elif event.type == pygame.KEYDOWN:
@@ -53,8 +52,10 @@ while True:
     game.draw(fps,mousePos)
     
     # 蓄力击打
-    t = game.xuli(t,mousePos)
-    game.fashe(t,mousePos)
+    if game.charge == True:# 蓄力情况时
+        t = game.xuli(t,mousePos)
+    elif game.charge == 'Restore':# 反弹情况时
+        game.fashe(t,mousePos)
     
     # 刷新屏幕2
     pygame.display.flip()
