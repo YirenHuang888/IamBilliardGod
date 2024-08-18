@@ -9,6 +9,7 @@ import math
 from ballbase import Ball
 from side import Side
 from stick import Stick
+from hole import Hole
 from data_dic import ball_data,arcSide_data,lineSide_data
 from const import BLACK,WHITE,GRAY,HOLE
 
@@ -18,18 +19,28 @@ class Game(object):
         self.sc = sc
         self.Balls = []
         self.Sides = []
+        self.Holes = []
         self.Balls_get = []
         self.white_text = pygame.font.Font(None, 30)
         self.paused = False
         self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
         self.static = True
+        
         self.stick_image = pygame.image.load("E:/Billiard God/IamBilliardGod/pic/stick.png").convert_alpha()
         self.awaypos = (0,0)
 
         
     def draw(self,fps,mousePos):
         count = 0
-        #球体绘制
+        pos = False
+        
+        #球洞绘制
+        for hole in self.Holes:
+            hole.draw(self.sc)
+        #边界绘制
+        for side in self.Sides:
+            side.draw(self.sc)
+       #球体绘制
         for ball in self.Balls:
             ball.draw(self.sc)
             
@@ -42,41 +53,37 @@ class Game(object):
                         
             if ball.controlable:
                 pos = ball.pos
-        #边界绘制
-        for side in self.Sides:
-            side.draw(self.sc)
 
         
-        # print(self.Balls)
-        # for eachhole in HOLE:
-        #     pygame.draw.circle(self.sc, GRAY, eachhole, 36)
         
         
         # 文字信息显示
         self.renderFont(fps)
-        
-        # 计算白球球心与鼠标的角度
-        angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-        # 旋转球杆子贴图
-        self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
-        self.rotated_stick.set_colorkey(WHITE)
-        self.stick_rect = self.rotated_stick.get_rect(center=pos)
-        # 绘制旋转后的球杆子
-        if self.static and not self.charge:# 所有球静止，且没有蓄力没有发射
-            self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
-            pygame.draw.rect(self.sc, (255,0,0), self.stick_rect, 2)
-            pygame.draw.circle(self.sc, GRAY, pos, 3)
+        if pos:
+            # 计算白球球心与鼠标的角度
+            angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
+            # 旋转球杆子贴图
+            self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
+            self.rotated_stick.set_colorkey(WHITE)
+            self.stick_rect = self.rotated_stick.get_rect(center=pos)
+            # 绘制旋转后的球杆子
+            if self.static and not self.charge:# 所有球静止，且没有蓄力没有发射
+                self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
+                # pygame.draw.rect(self.sc, (255,0,0), self.stick_rect, 2)
+                # pygame.draw.circle(self.sc, GRAY, pos, 3)
 
     
     def update(self):
         for ball in self.Balls:
-             c = ball.move(self.Balls,self.Sides)
-             if c:
-                 continue
+             b = ball.move(self.Balls,self.Sides,self.Holes)
+             if b:
+                 self.Balls.remove(b)
+                 self.Balls_get.append(b)
         
     def startGame(self):
         self.Balls.clear()
         self.Sides.clear()
+        self.Holes.clear()
 
         for i in range(len(ball_data)):
             pos = ball_data[i]['LOCATION']
@@ -88,7 +95,9 @@ class Game(object):
             #     print(type(b))
             # if i >3:
             #     break
-        
+        for holepos in HOLE:
+            hole = Hole(holepos)
+            self.Holes.append(hole)
         for arc in arcSide_data.values():
             arcside = Side(True, arc)
             self.Sides.append(arcside)
@@ -133,7 +142,7 @@ class Game(object):
                 pos = ball.pos
                 angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
                 backDistance = 50
-                num_steps = 100  # 将每帧时间分解为100个小步长
+                num_steps = 20  # 将每帧时间分解为100个小步长
             
                 for _ in range(num_steps):# 将1帧的运动再细分100份
                     delta_d = backDistance / num_steps

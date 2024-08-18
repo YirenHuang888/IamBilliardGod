@@ -17,9 +17,9 @@ class Ball():
         self.speed = pygame.Vector2(0, 0)  
         self.controlable = self.getBallData('CTRL')
     
-    def move(self,ball_group,side_group):
+    def move(self,ball_group,side_group,hole_group):
         if self.speed:
-            num_steps = 100  # 将每帧时间分解为100个小步长
+            num_steps = 200  # 将每帧时间分解为100个小步长
         
             for _ in range(num_steps):# 将1帧的运动再细分100份
                 delta_x = self.speed / num_steps
@@ -29,20 +29,25 @@ class Ball():
                 side = self.collide_side(side_group)
                 if side:
                     self.speed_exchange3(side)
+                    self.fric(0.95)
                 #球体间碰撞
                 other_ball = self.collide_ball(ball_group)
                 if other_ball:
                     self.speed_exchange2(other_ball)
                     self.fric(0.95)
-                    return True
-            
+                #进洞判定
+                get = self.collide_hole(hole_group)
+                if get:
+                    return self
+                
+                    
             self.fric(0.99)
             if self.speed.length() <= 0.2:
                 self.speed = pygame.Vector2(0, 0)
     
     def collide_ball(self, group):
         for other_ball in group:
-            if other_ball != self and self.pos.distance_to(other_ball.pos) < self.radius * 2 :
+            if other_ball != self and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
                 # print('-----\n',
                 #       self.id,'撞到了：',other_ball.id,
                 #       '\n跟ta的距离是：',self.pos.distance_to(other_ball.pos),
@@ -74,7 +79,7 @@ class Ball():
     
         # 更新球体的速度
         self.speed += impulse_vector
-        if isinstance(self,type(other)):
+        if isinstance(self,type(other)):#如果被撞对象是球体
             other.speed -= impulse_vector
     
 
@@ -85,27 +90,25 @@ class Ball():
      
     # 边界检测
     def collide_side(self,group):
-        print('---start---')
-        i = 0
         for side in group:
-            i+=1
-            print(f'我是第{i}个边界，')
-            print(side.distance2ball(self))
-            if (side.IFcollide and
-                side.distance2ball(self) <= self.radius
-                ):
-                return side
-        print('---end---')
+            if side.IFcollide:
+                if side.distance2ball(self) <= self.radius + side.radius:
+                    return side
             
     def speed_exchange3(self,side):
         if side.IFarc:
             self.speed_exchange2(side)
         else:
             if side.toward == 'shu':# 竖着的
-                self.speed.x = -self.speed.x * 0.95 
+                self.speed.x = -self.speed.x
             elif side.toward == 'heng':# 横着的
-                self.speed.y = -self.speed.y * 0.95
+                self.speed.y = -self.speed.y
     
+    def collide_hole(self, group):
+        for hole in group:
+            if self.pos.distance_to(hole.pos) <= hole.radius :
+                return True
+
     def getBallData(self,key):
         return ball_data[self.id][key]
 
