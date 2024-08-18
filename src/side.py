@@ -11,6 +11,9 @@ class Side():
         self.IFarc = IFarc
         self.toward = False
         self.radius = 0
+        self.width = 1
+        self.IFcollide = dic['COLLIDE']
+        
         if self.IFarc:# 曲线边界
             self.color = dic['COLOR']
             self.rect = [round(i) for i in dic['RECT']]
@@ -19,20 +22,19 @@ class Side():
             self.start_angle = dic['START_ANGLE']
             self.stop_angle = dic['STOP_ANGLE']
             self.speed = pygame.Vector2(0,0)
+        
         else:
             self.color = dic['COLOR']
             self.start_point = dic['START_POINT']
             self.stop_point = dic['STOP_POINT']
-            # print(self.start_point,self.stop_point,sep=',')
+            self.xory = 0
             if self.start_point[0] == self.stop_point[0]:# 竖着的
                 self.toward = 'shu'
-                # print('shu')
+                self.xory = self.start_point[0]
             elif self.start_point[1] == self.stop_point[1]:# 横着的
                 self.toward = 'heng'
-                # print('heng')
-        self.width = 1
-        self.IFcollide = dic['COLLIDE']
-    
+                self.xory = self.start_point[1]
+        
     def draw(self,screen):
         if self.IFarc:# 曲线边界
             pygame.draw.arc(screen, 

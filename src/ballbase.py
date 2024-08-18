@@ -19,21 +19,23 @@ class Ball():
     
     def move(self,ball_group,side_group,hole_group):
         if self.speed:
-            num_steps = 200  # 将每帧时间分解为100个小步长
+            num_steps = 40  # 将每帧时间分解为40个小步长
         
-            for _ in range(num_steps):# 将1帧的运动再细分100份
+            for _ in range(num_steps):# 将1帧的运动再细分40份
                 delta_x = self.speed / num_steps
                 self.pos += delta_x
                 
                 #边界碰撞
-                side = self.collide_side(side_group)
+                side,overlap = self.collide_side(side_group)
                 if side:
                     self.speed_exchange3(side)
+                    self.getawayfromSide(overlap,side)
                     self.fric(0.95)
                 #球体间碰撞
-                other_ball = self.collide_ball(ball_group)
+                other_ball,overlap = self.collide_ball(ball_group)
                 if other_ball:
                     self.speed_exchange2(other_ball)
+                    self.getawayfromBall(overlap,other_ball)
                     self.fric(0.95)
                 #进洞判定
                 get = self.collide_hole(hole_group)
@@ -53,8 +55,30 @@ class Ball():
                 #       '\n跟ta的距离是：',self.pos.distance_to(other_ball.pos),
                 #       '\n-----\n'
                 #       )
-                return other_ball
-                        
+                overlap = self.radius * 2 - self.pos.distance_to(other_ball.pos)
+                return other_ball,overlap
+        return False,0
+    
+    def getawayfromBall(self,overlap,other_ball):
+            normal = self.pos - other_ball.pos
+            normal = normal.normalize()
+            self.pos += overlap * normal
+    
+    def getawayfromSide(self,overlap,side):
+        if side.IFarc:
+            normal = self.pos - side.pos
+            normal = normal.normalize()
+            self.pos += overlap * normal
+        else:
+            if side.toward == 'shu':
+                normal = pygame.Vector2(self.pos.x - side.xory,0)
+                normal = normal.normalize()
+                self.pos += overlap * normal
+            elif side.toward == 'heng':
+                normal = pygame.Vector2(0,self.pos.y - side.xory)
+                normal = normal.normalize()
+                self.pos += overlap * normal
+
     def speed_exchange2(self, other):
         # 计算法线向量
         normal = other.pos - self.pos
@@ -81,6 +105,7 @@ class Ball():
         self.speed += impulse_vector
         if isinstance(self,type(other)):#如果被撞对象是球体
             other.speed -= impulse_vector
+            
     
 
     # 摩擦力
@@ -92,8 +117,11 @@ class Ball():
     def collide_side(self,group):
         for side in group:
             if side.IFcollide:
-                if side.distance2ball(self) <= self.radius + side.radius:
-                    return side
+                distance = side.distance2ball(self)
+                if distance <= self.radius + side.radius:
+                    overlap = self.radius + side.radius - distance
+                    return side,overlap
+        return False,0
             
     def speed_exchange3(self,side):
         if side.IFarc:

@@ -85,27 +85,25 @@ class Game(object):
         self.Sides.clear()
         self.Holes.clear()
 
+        # 初始化球类
         for i in range(len(ball_data)):
             pos = ball_data[i]['LOCATION']
             if i == 0:
                 self.awaypos = pos
             b = Ball(pos,i)
             self.Balls.append(b)
-            # if type(b) == Ball:
-            #     print(type(b))
-            # if i >3:
-            #     break
+        # 初始化球洞
         for holepos in HOLE:
             hole = Hole(holepos)
             self.Holes.append(hole)
+        # 初始化曲线边界
         for arc in arcSide_data.values():
             arcside = Side(True, arc)
             self.Sides.append(arcside)
+        # 初始化直线边界
         for line in lineSide_data.values():
             lineside = Side(False, line)
             self.Sides.append(lineside)
-
-        # print(self.Balls)
     
     def xuli(self,xuli_time, mousePos):
         for ball in self.Balls:
@@ -113,7 +111,6 @@ class Game(object):
                 pos = ball.pos
                 angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
                 awayDistance = 50 * xuli_time
-                # print(f'白球坐标为：{pos}，贴图中心坐标为：{self.stick_rect.center}')
                 self.awaypos = (self.stick_rect.centerx + awayDistance * -math.cos(angle),
                                 self.stick_rect.centery + awayDistance * -math.sin(angle))
                 
@@ -175,21 +172,21 @@ class Game(object):
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, WHITE)
         self.sc.blit(textImage, (1280, 20))
         
-        for ball in self.Balls:
-            if ball.controlable:
-                wt_speed = ball.speed
-                wt_pos = ball.pos
-                #速度表
-                textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, BLACK)
-                self.sc.blit(textImage, (13, 23))
-                textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, WHITE)
-                self.sc.blit(textImage, (10, 20))
-                #pos坐标表
-                textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, BLACK)
-                self.sc.blit(textImage, (13, 43))
-                textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, WHITE)
-                self.sc.blit(textImage, (10, 40))
-                break
+        # for ball in self.Balls:
+        #     if ball.controlable:
+        #         wt_speed = ball.speed
+        #         wt_pos = ball.pos
+        #         #速度表
+        #         textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, BLACK)
+        #         self.sc.blit(textImage, (13, 23))
+        #         textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, WHITE)
+        #         self.sc.blit(textImage, (10, 20))
+        #         #pos坐标表
+        #         textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, BLACK)
+        #         self.sc.blit(textImage, (13, 43))
+        #         textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, WHITE)
+        #         self.sc.blit(textImage, (10, 40))
+        #         break
     
     def pause(self):
         self.paused = True
