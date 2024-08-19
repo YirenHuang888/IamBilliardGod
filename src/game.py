@@ -20,70 +20,70 @@ class Game(object):
         self.Balls = []
         self.Sides = []
         self.Holes = []
+        self.Stick = None
         self.Balls_get = []
         self.white_text = pygame.font.Font(None, 30)
         self.paused = False
         self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
         self.static = True
         
-        self.stick_image = pygame.image.load("E:/Billiard God/IamBilliardGod/pic/stick.png").convert_alpha()
-        self.awaypos = (0,0)
-
-        
-    def draw(self,fps,mousePos):
-        count = 0
-        pos = False
-        
+    def draw(self,fps):        
         #球洞绘制
         for hole in self.Holes:
             hole.draw(self.sc)
         #边界绘制
         for side in self.Sides:
             side.draw(self.sc)
-       #球体绘制
+        #球体绘制
         for ball in self.Balls:
             ball.draw(self.sc)
-            
+        # 球杆绘制
+        if self.static and not self.charge and self.whiteBall:
+            self.Stick.draw(self.sc)
+        # 文字信息显示
+        self.renderFont(fps)
+    
+    def update(self,mousePos):
+        count = 0
+        # 球类移动
+        for ball in self.Balls:
+            if ball.controlable:
+                self.whiteBall = ball
             if ball.speed:
                 self.static = False
+                b = ball.move(self.Balls,self.Sides,self.Holes)
+                if b:
+                    self.Balls.remove(b)
+                    self.Balls_get.append(b)
+                    b.speed = pygame.Vector2(0, 0)
+                    if b == self.whiteBall:# 白球进洞
+                        self.whiteBall = False
+                        self.charge = False
+                ball.fric(0.99)
+                if ball.speed.length() <= 0.2:
+                    ball.speed = pygame.Vector2(0, 0)
             else:
                 count += 1
                 if count == len(self.Balls):
                     self.static = True
-                        
-            if ball.controlable:
-                pos = ball.pos
-
-        
-        
-        
-        # 文字信息显示
-        self.renderFont(fps)
-        if pos:
-            # 计算白球球心与鼠标的角度
-            angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-            # 旋转球杆子贴图
-            self.rotated_stick = pygame.transform.rotate(self.stick_image, -math.degrees(angle))
-            self.rotated_stick.set_colorkey(WHITE)
-            self.stick_rect = self.rotated_stick.get_rect(center=pos)
-            # 绘制旋转后的球杆子
-            if self.static and not self.charge:# 所有球静止，且没有蓄力没有发射
-                self.sc.blit(self.rotated_stick, self.stick_rect.topleft)
-                # pygame.draw.rect(self.sc, (255,0,0), self.stick_rect, 2)
-                # pygame.draw.circle(self.sc, GRAY, pos, 3)
-
     
-    def update(self):
-        for ball in self.Balls:
-             b = ball.move(self.Balls,self.Sides,self.Holes)
-             if b:
-                 self.Balls.remove(b)
-                 self.Balls_get.append(b)
+        
+        # 球杆旋转
+        if self.whiteBall:# 如果白球在场
+            self.Stick.rotate(self.whiteBall.pos, mousePos)
+        else:# 如果白球不在场
+            self.Stick.centerPos = (1,1)
+
         
     def startGame(self):
-        self.Balls.clear()
-        self.Sides.clear()
-        self.Holes.clear()
+        # 删除现有对象
+        for ball in self.Balls:
+            del ball
+        for side in self.Sides:
+            del side
+        for hole in self.Holes:
+            del hole
+        del self.Stick
 
         # 初始化球类
         for i in range(len(ball_data)):
@@ -92,6 +92,8 @@ class Game(object):
                 self.awaypos = pos
             b = Ball(pos,i)
             self.Balls.append(b)
+        # 初始化球杆子
+        self.Stick = Stick("E:/Billiard God/IamBilliardGod/pic/stick.png")
         # 初始化球洞
         for holepos in HOLE:
             hole = Hole(holepos)
@@ -106,65 +108,32 @@ class Game(object):
             self.Sides.append(lineside)
     
     def xuli(self,xuli_time, mousePos):
-        for ball in self.Balls:
-            if ball.controlable:
-                pos = ball.pos
-                angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                awayDistance = 50 * xuli_time
-                self.awaypos = (self.stick_rect.centerx + awayDistance * -math.cos(angle),
-                                self.stick_rect.centery + awayDistance * -math.sin(angle))
-                
-                self.sc.blit(self.rotated_stick, 
-                             (self.awaypos[0]-self.stick_rect.width/2,
-                              self.awaypos[1]-self.stick_rect.height/2)
-                             )
-                # pygame.draw.rect(self.sc,
-                #                  (255,0,0),
-                #                  (self.awaypos[0]-self.stick_rect.width/2,
-                #                   self.awaypos[1]-self.stick_rect.height/2,
-                #                   self.stick_rect.width,
-                #                   self.stick_rect.height),
-                #                  2)
-                # pygame.draw.circle(self.sc, GRAY, self.awaypos, 3)
-
-                break
-        xuli_time += 0.04
-        if xuli_time >= 3:
-            xuli_time = 3
-        return xuli_time
+        if self.whiteBall:
+            # 球杆向后退蓄力
+            self.Stick.away(self.sc, xuli_time, mousePos)
+            
+            # 增加蓄力时间
+            xuli_time += 0.04
+            if xuli_time >= 3:
+                xuli_time = 3
+            return xuli_time
     
     def fashe(self, xuli_time, mousePos):
-        for ball in self.Balls:
-            if ball.controlable:
-                pos = ball.pos
-                angle = math.atan2(mousePos[1]-pos[1],mousePos[0]-pos[0])
-                backDistance = 50
-                num_steps = 20  # 将每帧时间分解为100个小步长
-            
-                for _ in range(num_steps):# 将1帧的运动再细分100份
-                    delta_d = backDistance / num_steps
-                    self.awaypos = (self.awaypos[0] + delta_d * math.cos(angle),
-                                    self.awaypos[1] + delta_d * math.sin(angle))
-                    self.sc.blit(self.rotated_stick,
-                                 (self.awaypos[0]-self.stick_rect.width/2,
-                                  self.awaypos[1]-self.stick_rect.height/2)
-                                 )
-                    # pygame.draw.rect(self.sc,
-                    #                  (255,0,0),
-                    #                  (self.awaypos[0]-self.stick_rect.width/2,
-                    #                   self.awaypos[1]-self.stick_rect.height/2,
-                    #                   self.stick_rect.width,
-                    #                   self.stick_rect.height),
-                    #                  2)
-                    # pygame.draw.circle(self.sc, GRAY, self.awaypos, 3)
-    
-                    if pos.distance_to(self.awaypos) <= ball.radius:
-                        rate = 10 * xuli_time
-                        ball.speed[0] = rate * math.cos(angle)
-                        ball.speed[1] = rate * math.sin(angle)
-                        self.charge = False
-                break
-        
+        if self.whiteBall:# 如果白球在场
+            num_steps = 20 # 将每帧时间分解为20个小步长
+            backSpeed = 50 # 出杆速度
+            for _ in range(num_steps): # 将1帧的运动再细分20份
+                # 释放球杆
+                dv = backSpeed / num_steps # 每份的移动速度
+                centerPos,angle = self.Stick.back(self.sc, dv, mousePos)
+                
+                # 击打白球
+                if self.whiteBall.pos.distance_to(centerPos) <= 1:
+                    rate = 10 * xuli_time
+                    self.whiteBall.speed[0] = rate * math.cos(angle)
+                    self.whiteBall.speed[1] = rate * math.sin(angle)
+                    self.charge = False
+
     def renderFont(self,fps):
         # FPS显示
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, BLACK)
@@ -172,22 +141,14 @@ class Game(object):
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, WHITE)
         self.sc.blit(textImage, (1280, 20))
         
-        # for ball in self.Balls:
-        #     if ball.controlable:
-        #         wt_speed = ball.speed
-        #         wt_pos = ball.pos
-        #         #速度表
-        #         textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, BLACK)
-        #         self.sc.blit(textImage, (13, 23))
-        #         textImage = self.white_text.render("vx: " + str(round(wt_speed[0],2)) + "  vy: " + str(round(wt_speed[1],2)) + ' v: ' + str(round(wt_speed.length(),2)), True, WHITE)
-        #         self.sc.blit(textImage, (10, 20))
-        #         #pos坐标表
-        #         textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, BLACK)
-        #         self.sc.blit(textImage, (13, 43))
-        #         textImage = self.white_text.render("x: " + str(round(wt_pos[0],1)) + "  y: " + str(round(wt_pos[1],1)), True, WHITE)
-        #         self.sc.blit(textImage, (10, 40))
-        #         break
-    
+        # 计分板
+        score = len(self.Balls_get) * 10
+        textImage = self.white_text.render('SCORE:{}'.format(score), True, BLACK)
+        self.sc.blit(textImage, (10, 23))
+        textImage = self.white_text.render('SCORE:{}'.format(score), True, WHITE)
+        self.sc.blit(textImage, (10, 20))
+
+            
     def pause(self):
         self.paused = True
 

@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jul 23 22:48:35 2024
@@ -31,10 +30,10 @@ while True:
         #鼠标左键按下蓄力，松开击打
         elif event.type == pygame.MOUSEBUTTONDOWN:
             t = 0
-            if game.static:# 全场的球体都静止
+            if game.static and game.whiteBall:# 全场的球体都静止，且白球存在
                 game.charge = True
         elif event.type == pygame.MOUSEBUTTONUP:
-            if game.charge:# 鼠标左键被按下
+            if game.charge:# 鼠标左键已被按下
                 game.charge = 'Restore'
         
         elif event.type == pygame.KEYDOWN:
@@ -48,8 +47,8 @@ while True:
     
     # 刷新屏幕1
     screen.fill(GREEN)
-    game.update()
-    game.draw(fps,mousePos)
+    game.update(mousePos)
+    game.draw(fps)
     
     # 蓄力击打
     if game.charge == True:# 蓄力情况时

@@ -18,35 +18,28 @@ class Ball():
         self.controlable = self.getBallData('CTRL')
     
     def move(self,ball_group,side_group,hole_group):
-        if self.speed:
-            num_steps = 40  # 将每帧时间分解为40个小步长
-        
-            for _ in range(num_steps):# 将1帧的运动再细分40份
-                delta_x = self.speed / num_steps
-                self.pos += delta_x
+        num_steps = 40  # 将每帧时间分解为40个小步长
+        for _ in range(num_steps):# 将1帧的运动再细分40份
+            delta_x = self.speed / num_steps
+            self.pos += delta_x
+            
+            #边界碰撞
+            side,overlap = self.collide_side(side_group)
+            if side:
+                self.speed_exchange3(side)
+                self.getawayfromSide(overlap,side)
+                self.fric(0.95)
+            #球体间碰撞
+            other_ball,overlap = self.collide_ball(ball_group)
+            if other_ball:
+                self.speed_exchange2(other_ball)
+                self.getawayfromBall(overlap,other_ball)
+                self.fric(0.95)
+            #进洞判定,进洞则返回要被删除的球
+            get = self.collide_hole(hole_group)
+            if get:
+                return self
                 
-                #边界碰撞
-                side,overlap = self.collide_side(side_group)
-                if side:
-                    self.speed_exchange3(side)
-                    self.getawayfromSide(overlap,side)
-                    self.fric(0.95)
-                #球体间碰撞
-                other_ball,overlap = self.collide_ball(ball_group)
-                if other_ball:
-                    self.speed_exchange2(other_ball)
-                    self.getawayfromBall(overlap,other_ball)
-                    self.fric(0.95)
-                #进洞判定
-                get = self.collide_hole(hole_group)
-                if get:
-                    return self
-                
-                    
-            self.fric(0.99)
-            if self.speed.length() <= 0.2:
-                self.speed = pygame.Vector2(0, 0)
-    
     def collide_ball(self, group):
         for other_ball in group:
             if other_ball != self and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
