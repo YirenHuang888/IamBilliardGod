@@ -6,28 +6,35 @@ Created on Wed Jul 24 11:06:15 2024
 """
 import pygame
 import math
+import time
 from ballbase import Ball
 from side import Side
 from stick import Stick
 from hole import Hole
 from data_dic import ball_data,arcSide_data,lineSide_data
-from const import BLACK,WHITE,GRAY,HOLE
+from const import BLACK,WHITE,HOLE,TRANSPARENT
 
 
 class Game(object):
     def __init__(self, sc):
         self.sc = sc
+        self.white_text = pygame.font.Font(None, 30)
+        
         self.Balls = []
         self.Sides = []
         self.Holes = []
         self.Stick = None
         self.Balls_get = []
-        self.white_text = pygame.font.Font(None, 30)
-        self.paused = False
-        self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
-        self.static = True
         
-    def draw(self,fps):        
+        self.paused = False #是否暂停
+        self.static = True # 是否击球结束
+        self.aiming = False # 是否处于瞄准状态
+        self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
+        self.baiqiu = False # 是否要摆球
+        self.mouseOutside = False # 是否鼠标位于界外
+        self.timing = []
+        
+    def draw(self,fps,mousePos):        
         #球洞绘制
         for hole in self.Holes:
             hole.draw(self.sc)
@@ -38,8 +45,14 @@ class Game(object):
         for ball in self.Balls:
             ball.draw(self.sc)
         # 球杆绘制
-        if self.static and not self.charge and self.whiteBall:
-            self.Stick.draw(self.sc)
+        if self.static:
+            if self.whiteBall:
+                self.aim(mousePos)
+                if not self.charge:
+                    self.Stick.draw(self.sc)
+            else:
+                pygame.draw.circle(self.sc, WHITE, mousePos, 18)
+                self.baiqiu = True
         # 文字信息显示
         self.renderFont(fps)
     
@@ -59,6 +72,7 @@ class Game(object):
                     if b == self.whiteBall:# 白球进洞
                         self.whiteBall = False
                         self.charge = False
+                        self.Balls_get.remove(b)
                 ball.fric(0.99)
                 if ball.speed.length() <= 0.2:
                     ball.speed = pygame.Vector2(0, 0)
@@ -77,19 +91,14 @@ class Game(object):
         
     def startGame(self):
         # 删除现有对象
-        for ball in self.Balls:
-            del ball
-        for side in self.Sides:
-            del side
-        for hole in self.Holes:
-            del hole
+        self.Balls.clear()
+        self.Sides.clear()
+        self.Holes.clear()
         del self.Stick
 
         # 初始化球类
         for i in range(len(ball_data)):
             pos = ball_data[i]['LOCATION']
-            if i == 0:
-                self.awaypos = pos
             b = Ball(pos,i)
             self.Balls.append(b)
         # 初始化球杆子
@@ -143,14 +152,47 @@ class Game(object):
         
         # 计分板
         score = len(self.Balls_get) * 10
-        textImage = self.white_text.render('SCORE:{}'.format(score), True, BLACK)
+        textImage = self.white_text.render('SCORE: {}'.format(int(score)), True, BLACK)
         self.sc.blit(textImage, (10, 23))
-        textImage = self.white_text.render('SCORE:{}'.format(score), True, WHITE)
+        textImage = self.white_text.render('SCORE: {}'.format(int(score)), True, WHITE)
         self.sc.blit(textImage, (10, 20))
 
             
     def pause(self):
         self.paused = True
+        
+    def aim(self,mousePos):
+        if self.aiming:# 右键瞄准
+            pass
+        else:# 左键瞄准
+            # 圆环
+            pygame.draw.circle(self.sc, WHITE, mousePos, self.whiteBall.radius)
+            pygame.draw.circle(self.sc, TRANSPARENT, mousePos, self.whiteBall.radius-2)
+            # 连线
+            pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, mousePos)
+        pass
+    
+    def doubleclick(self):
+        self.timing.append(time.time())
+        if len(self.timing) >= 2 and self.timing[-1] - self.timing[-2] < 0.5:
+            self.timing.clear()
+            return True
+        else:
+            return False
+        
+    def placeWhiteBall(self,mousePos):
+        whiteBall = Ball(mousePos,0)
+        self.Balls.insert(0,whiteBall)
+        
+    def intheHole(self,onepos):
+        onepos = pygame.Vector2(onepos)
+        for hole in self.Holes:
+            if onepos.distance_to(hole.pos) <= hole.radius:
+                return True
+
+    
+    
+
 
         
         

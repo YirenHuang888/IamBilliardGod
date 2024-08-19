@@ -6,7 +6,7 @@ Created on Fri Aug 16 15:50:36 2024
 """
 import pygame
 import math
-from const import WHITE,GRAY
+from const import WHITE
 
 class Stick():
     def __init__(self,path):

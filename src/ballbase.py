@@ -5,7 +5,7 @@ Created on Wed Jul 24 11:53:32 2024
 @author: Administrator
 """
 import pygame
-from const import screen_size,BLACK,WHITE
+from const import BLACK,WHITE
 from data_dic import ball_data
 
 class Ball():
@@ -43,11 +43,6 @@ class Ball():
     def collide_ball(self, group):
         for other_ball in group:
             if other_ball != self and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
-                # print('-----\n',
-                #       self.id,'撞到了：',other_ball.id,
-                #       '\n跟ta的距离是：',self.pos.distance_to(other_ball.pos),
-                #       '\n-----\n'
-                #       )
                 overlap = self.radius * 2 - self.pos.distance_to(other_ball.pos)
                 return other_ball,overlap
         return False,0
@@ -80,33 +75,23 @@ class Ball():
             return  # 防止除零错误和重合情况
         normal = normal.normalize()
     
-        # 计算相对速度
-        relative_velocity = self.speed - other.speed
-    
-        # 计算速度沿法线方向的分量
-        velocity_along_normal = relative_velocity.dot(normal)
-    
-        # 如果速度分量小于0，说明球体在分离，不处理
-        if velocity_along_normal < 0:
+        relative_velocity = self.speed - other.speed# 计算相对速度
+        velocity_along_normal = relative_velocity.dot(normal)# 速度沿法线方向的分量
+        if velocity_along_normal < 0:# 如果速度分量小于0，说明球体在分离，不处理
             return
+        
         # 碰撞后速度的计算 (弹性碰撞)
-        restitution = 1 # 弹性系数，为1表示完全弹性碰撞
-        impulse_magnitude = -(1 + restitution) * velocity_along_normal / 2
-        impulse_vector = normal * impulse_magnitude
+        impulse_magnitude = -velocity_along_normal
     
         # 更新球体的速度
-        self.speed += impulse_vector
+        self.speed += normal * impulse_magnitude
         if isinstance(self,type(other)):#如果被撞对象是球体
-            other.speed -= impulse_vector
-            
-    
+            other.speed -= normal * impulse_magnitude
 
-    # 摩擦力
     def fric(self,f):
         if self.speed.length() > 0.2:  
             self.speed *= f  
      
-    # 边界检测
     def collide_side(self,group):
         for side in group:
             if side.IFcollide:
@@ -134,13 +119,15 @@ class Ball():
         return ball_data[self.id][key]
 
     def draw(self, screen):
+        # 绘制球体
         pygame.draw.circle(screen, self.color, (self.pos.x,self.pos.y), int(self.radius))
+        # 绘制序号
         if not self.controlable:
-            ball_id = pygame.font.Font(None, 18)
+            ball_id = pygame.font.Font(None, 25)
             textImage = ball_id.render(str(self.id), True, BLACK)
-            screen.blit(textImage, (self.pos.x-4,self.pos.y-1))
+            screen.blit(textImage, (self.pos.x-8,self.pos.y-4))
             textImage = ball_id.render(str(self.id), True, WHITE)
-            screen.blit(textImage, (self.pos.x-4,self.pos.y-4))
+            screen.blit(textImage, (self.pos.x-8,self.pos.y-8))
 
 
 

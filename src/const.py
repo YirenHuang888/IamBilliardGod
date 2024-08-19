@@ -13,6 +13,7 @@ GRAY = (32, 32, 32)
 GREEN = (0, 128, 0)
 BLUE = (0, 50, 255)
 RED = (255, 0, 0)
+TRANSPARENT = (0, 0, 0, 0)
 
 
 WHITE_ID = 0
