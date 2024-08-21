@@ -26,7 +26,7 @@ while True:
     # 实时检测鼠标是否出界
     if game.static and game.aiming == 'left' and not game.charge:
         # 全场静止且使用左键瞄准未蓄力时
-        if game.inCourt(pygame.mouse.get_pos()):# 未出界
+        if game.inCourt(1,pygame.mouse.get_pos()):# 未出界
             mousePos = pygame.mouse.get_pos()  
             game.mouseOutside = False
         else:# 出界
@@ -45,7 +45,7 @@ while True:
             btn = event.button
             if btn == 1:# 鼠标左键按下
                 # 摆球
-                if game.baiqiu and game.inCourt(pygame.mouse.get_pos()):# 正在摆球且摆球没出界
+                if game.baiqiu and game.inCourt(2,pygame.mouse.get_pos()):# 正在摆球且摆球没出界
                     game.placeWhiteBall(mousePos)
                     game.baiqiu = False
                 # 蓄力
