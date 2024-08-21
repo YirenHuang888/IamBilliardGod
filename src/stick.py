@@ -15,6 +15,7 @@ class Stick():
     
     def rotate(self,ballPos,mousePos):
         self.centerPos = ballPos
+        self.awaypos = ballPos
         # 计算白球球心与鼠标的角度
         angle = math.atan2(mousePos[1]-self.centerPos[1],mousePos[0]-self.centerPos[0])
         # 旋转球杆子贴图
@@ -37,8 +38,8 @@ class Stick():
         screen.blit(self.rotated_stick, 
                      (self.awaypos[0]-self.stick_rect.width/2,
                       self.awaypos[1]-self.stick_rect.height/2)
-                     )
-    
+                    )
+
     def back(self,screen,dv,mousePos):
         angle = math.atan2(mousePos[1]-self.centerPos[1],mousePos[0]-self.centerPos[0])
         self.awaypos = (self.awaypos[0] + dv * math.cos(angle),
@@ -46,7 +47,7 @@ class Stick():
         screen.blit(self.rotated_stick,
                      (self.awaypos[0]-self.stick_rect.width/2,
                       self.awaypos[1]-self.stick_rect.height/2)
-                     )
+                    )
         
         return self.centerPos,angle
             

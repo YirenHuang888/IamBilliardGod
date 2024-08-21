@@ -7,19 +7,23 @@ Created on Wed Jul 24 11:06:15 2024
 import pygame
 import math
 import time
+import random 
 from ballbase import Ball
 from side import Side
 from stick import Stick
 from hole import Hole
 from data_dic import ball_data,arcSide_data,lineSide_data
-from const import BLACK,WHITE,HOLE,TRANSPARENT
+from const import BLACK,WHITE,HOLE,TRANSPARENT,GREEN,START_LOCATION
 
 
 class Game(object):
-    def __init__(self, sc):
+    def __init__(self, sc, tpsc):
         self.sc = sc
+        self.tpsc = tpsc
         self.white_text = pygame.font.Font(None, 30)
-        
+        # self.bg = pygame.image.load(r"E:\Billiard God\IamBilliardGod\pic\side.png").convert_alpha()
+        # self.bg.set_colorkey(GREEN)
+
         self.Balls = []
         self.Sides = []
         self.Holes = []
@@ -28,28 +32,33 @@ class Game(object):
         
         self.paused = False #是否暂停
         self.static = True # 是否击球结束
-        self.aiming = False # 是否处于瞄准状态
         self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
         self.baiqiu = False # 是否要摆球
         self.mouseOutside = False # 是否鼠标位于界外
+        self.aiming = 'left' # 处于左键、右键瞄准状态
         self.timing = []
         
     def draw(self,fps,mousePos):        
+        self.sc.fill(GREEN)
+        self.tpsc.fill(TRANSPARENT)
+        
         #球洞绘制
         for hole in self.Holes:
             hole.draw(self.sc)
         #边界绘制
         for side in self.Sides:
             side.draw(self.sc)
+        # 背景图
+        # self.sc.blit(self.bg,(0,0))
         #球体绘制
         for ball in self.Balls:
             ball.draw(self.sc)
-        # 球杆绘制
+        
         if self.static:
             if self.whiteBall:
-                self.aim(mousePos)
+                self.aim(mousePos)# 瞄准线绘制
                 if not self.charge:
-                    self.Stick.draw(self.sc)
+                    self.Stick.draw(self.sc)# 球杆绘制
             else:
                 pygame.draw.circle(self.sc, WHITE, mousePos, 18)
                 self.baiqiu = True
@@ -86,10 +95,18 @@ class Game(object):
         if self.whiteBall:# 如果白球在场
             self.Stick.rotate(self.whiteBall.pos, mousePos)
         else:# 如果白球不在场
-            self.Stick.centerPos = (1,1)
+            self.Stick.centerPos = (0,0)
 
         
     def startGame(self):
+        # 状态重置
+        self.paused = False #是否暂停
+        self.static = True # 是否击球结束
+        self.aiming = 'left' # 处于左键、右键瞄准状态
+        self.charge = False #总共有False、True、'Restore'三种状态，分别对应平常、蓄力、释放三种状态
+        self.baiqiu = False # 是否要摆球
+        self.mouseOutside = False # 是否鼠标位于界外
+        
         # 删除现有对象
         self.Balls.clear()
         self.Sides.clear()
@@ -97,8 +114,9 @@ class Game(object):
         del self.Stick
 
         # 初始化球类
+        START_POS = self.allocateStartPos(START_LOCATION)
         for i in range(len(ball_data)):
-            pos = ball_data[i]['LOCATION']
+            pos = START_POS[i]
             b = Ball(pos,i)
             self.Balls.append(b)
         # 初始化球杆子
@@ -120,11 +138,11 @@ class Game(object):
         if self.whiteBall:
             # 球杆向后退蓄力
             self.Stick.away(self.sc, xuli_time, mousePos)
-            
             # 增加蓄力时间
-            xuli_time += 0.04
-            if xuli_time >= 3:
-                xuli_time = 3
+            xuli_time += 0.05
+            max_time = 3
+            if xuli_time >= max_time:
+                xuli_time = max_time
             return xuli_time
     
     def fashe(self, xuli_time, mousePos):
@@ -146,31 +164,31 @@ class Game(object):
     def renderFont(self,fps):
         # FPS显示
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, BLACK)
-        self.sc.blit(textImage, (1280, 23))
+        self.sc.blit(textImage, (1280, 13))
         textImage = self.white_text.render('FPS:{}'.format(int(fps)), True, WHITE)
-        self.sc.blit(textImage, (1280, 20))
+        self.sc.blit(textImage, (1280, 10))
         
         # 计分板
         score = len(self.Balls_get) * 10
         textImage = self.white_text.render('SCORE: {}'.format(int(score)), True, BLACK)
-        self.sc.blit(textImage, (10, 23))
+        self.sc.blit(textImage, (10, 13))
         textImage = self.white_text.render('SCORE: {}'.format(int(score)), True, WHITE)
-        self.sc.blit(textImage, (10, 20))
+        self.sc.blit(textImage, (10, 10))
 
             
     def pause(self):
         self.paused = True
         
     def aim(self,mousePos):
-        if self.aiming:# 右键瞄准
+        if self.aiming == 'right':# 右键瞄准
             pass
-        else:# 左键瞄准
-            # 圆环
-            pygame.draw.circle(self.sc, WHITE, mousePos, self.whiteBall.radius)
-            pygame.draw.circle(self.sc, TRANSPARENT, mousePos, self.whiteBall.radius-2)
+        elif self.aiming == 'left':# 左键瞄准
+            # 创建圆环
+            pygame.draw.circle(self.tpsc, WHITE, mousePos, self.whiteBall.radius)
+            pygame.draw.circle(self.tpsc, TRANSPARENT, mousePos, self.whiteBall.radius-2)
+            self.sc.blit(self.tpsc, (0, 0))
             # 连线
-            pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, mousePos)
-        pass
+            pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, mousePos, 2)
     
     def doubleclick(self):
         self.timing.append(time.time())
@@ -184,11 +202,40 @@ class Game(object):
         whiteBall = Ball(mousePos,0)
         self.Balls.insert(0,whiteBall)
         
-    def intheHole(self,onepos):
-        onepos = pygame.Vector2(onepos)
-        for hole in self.Holes:
-            if onepos.distance_to(hole.pos) <= hole.radius:
-                return True
+    def inCourt(self,mousePos):
+        self.testBall = Ball(mousePos,0)
+        
+        side = self.testBall.collide_side(self.Sides)[0]
+        # other_ball = self.testBall.collide_ball(self.Balls)[0]
+        get = self.testBall.collide_hole(self.Holes)
+        xoutrange = not bool(97.3835<self.testBall.pos.x<1269.9695)
+        youtrange = not bool(91.9509<self.testBall.pos.y<676.1886)
+        # 如果边界、球洞任碰其一，并且在球台外边
+        if side or get or xoutrange or youtrange:
+            return False
+        else:
+            return True
+    
+    def allocateStartPos(self,pos_list):
+        OLD_POS = pos_list.copy()# 防止把源数据全删掉引发错误
+        # 白球、黑八位置固定，右上右下不能同色
+        posD, posU, pos8, pos0 = (OLD_POS.pop(15), 
+                                  OLD_POS.pop(11), 
+                                  OLD_POS.pop(5), 
+                                  OLD_POS.pop(0)
+                                  )
+        # 选取位于右上右下的球号
+        indexD, indexU = random.sample([random.randint(1,7),random.randint(9,16)],2)
+        NEW_POS = random.sample(OLD_POS,12)# 剩下的位置随机排列
+        # 把拆出来的项组装回新列表
+        NEW_POS.insert(0, pos0)
+        NEW_POS.insert(indexD, posD)
+        NEW_POS.insert(indexU, posU)
+        NEW_POS.insert(8, pos8)
+        return NEW_POS
+
+
+
 
     
     
