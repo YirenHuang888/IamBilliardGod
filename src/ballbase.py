@@ -27,25 +27,28 @@ class Ball():
             side,overlap = self.collide_side(side_group)
             if side:
                 self.speed_exchange3(side)
-                self.getawayfromSide(overlap,side)
+                self.getawayfromSide(overlap,side)# 防重叠
                 self.fric(0.95)
+                return side, 'side'
             #球体间碰撞
             other_ball,overlap = self.collide_ball(ball_group)
             if other_ball:
                 self.speed_exchange2(other_ball)
-                self.getawayfromBall(overlap,other_ball)
+                self.getawayfromBall(overlap,other_ball)# 防重叠
                 self.fric(0.95)
+                return other_ball, 'ball'
             #进洞判定,进洞则返回要被删除的球
             get = self.collide_hole(hole_group)
             if get:
-                return self
+                return self, 'self'
+        return None, None
                 
     def collide_ball(self, group):
         for other_ball in group:
-            if other_ball != self and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
+            if other_ball.id != self.id and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
                 overlap = self.radius * 2 - self.pos.distance_to(other_ball.pos)
                 return other_ball,overlap
-        return False,0
+        return None,0
     
     def getawayfromBall(self,overlap,other_ball):
             normal = self.pos - other_ball.pos
@@ -99,7 +102,7 @@ class Ball():
                 if distance <= self.radius + side.radius:
                     overlap = self.radius + side.radius - distance
                     return side,overlap
-        return False,0
+        return None,0
             
     def speed_exchange3(self,side):
         if side.IFarc:
@@ -128,6 +131,31 @@ class Ball():
             screen.blit(textImage, (self.pos.x-8,self.pos.y-4))
             textImage = ball_id.render(str(self.id), True, WHITE)
             screen.blit(textImage, (self.pos.x-8,self.pos.y-8))
+    
+    def simulateShoot(self,ball_group,side_group,hole_group):
+        num_steps = 80  # 将每帧时间分解为40个小步长
+        for _ in range(num_steps):# 将1帧的运动再细分40份
+            delta_x = self.speed / num_steps
+            self.pos += delta_x
+            
+            #边界碰撞
+            side,overlap = self.collide_side(side_group)
+            if side:
+                self.getawayfromSide(overlap,side)# 防重叠
+                self.speed = pygame.Vector2(0, 0)
+                return side, 'side'
+            #球体间碰撞
+            other_ball,overlap = self.collide_ball(ball_group)
+            if other_ball:
+                self.getawayfromBall(overlap,other_ball)# 防重叠
+                self.speed = pygame.Vector2(0, 0)
+                return other_ball, 'ball'
+            #进洞判定,进洞则返回要被删除的球
+            get = self.collide_hole(hole_group)
+            if get:
+                self.speed = pygame.Vector2(0, 0)
+                return self, 'self'
+        return None, None
 
 
 

@@ -44,17 +44,18 @@ while True:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             btn = event.button
             if btn == 1:# 鼠标左键按下
-                # 摆球
-                if game.baiqiu and game.inCourt(2,pygame.mouse.get_pos()):# 正在摆球且摆球没出界
-                    game.placeWhiteBall(mousePos)
-                    game.baiqiu = False
                 # 蓄力
                 t = 0
                 if game.static and game.whiteBall:# 全场的球体都静止，且白球存在
                     game.charge = True
+                # 摆球
+                if game.baiqiu and game.inCourt(2,pygame.mouse.get_pos()):# 正在摆球且摆球没出界
+                    game.placeWhiteBall(mousePos)
+                    game.baiqiu = False
             if btn == 3:# 鼠标右键按下
                 mousePos = pygame.mouse.get_pos()
                 game.aiming = 'right'
+                game.createAimLine(mousePos)
                 if game.doubleclick():
                     game.aiming = 'left'
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -79,7 +80,7 @@ while True:
         if game.aiming == 'left':
             mousePos = pygame.mouse.get_pos()
         t = game.xuli(t,mousePos)
-    elif game.charge == 'Restore':# 反弹情况时
+    elif game.charge == 'Restore':# 释放情况时
         game.fashe(t,mousePos)
 
     # 刷新屏幕part2

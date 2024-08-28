@@ -39,11 +39,14 @@ class Game(object):
         self.Balls_get = []
 
         # 初始化球类
+        self.testBall = None
         START_POS = self.allocateStartPos(START_LOCATION)
         for i in range(len(ball_data)):
             pos = START_POS[i]
             b = Ball(pos,i)
             self.Balls.append(b)
+            if i == 0:
+                self.whiteBall = b
         # 初始化球杆子
         self.Stick = Stick("E:/Billiard God/IamBilliardGod/pic/stick.png")
         # 初始化球洞
@@ -76,41 +79,51 @@ class Game(object):
         
         if self.static:
             if self.whiteBall:
-                self.aim(mousePos)# 瞄准线绘制
+                self.drawAimLine(mousePos)# 瞄准线绘制
                 if not self.charge:
                     self.Stick.draw(self.sc)# 球杆绘制
             else:
                 pygame.draw.circle(self.sc, WHITE, mousePos, 18)
-                self.baiqiu = True
         
         # 文字信息显示
         self.renderFont(fps)
     
     def update(self,mousePos):
-        count = 0
-        # 球类移动
-        for ball in self.Balls:
-            if ball.controlable:
-                self.whiteBall = ball
-            if ball.speed:
-                self.static = False
-                b = ball.move(self.Balls,self.Sides,self.Holes)
-                if b:
-                    self.Balls.remove(b)
-                    self.Balls_get.append(b)
-                    b.speed = pygame.Vector2(0, 0)
-                    if b == self.whiteBall:# 白球进洞
-                        self.whiteBall = False
-                        self.charge = False
-                        self.Balls_get.remove(b)
-                ball.fric(0.99)
-                if ball.speed.length() <= 0.2:
-                    ball.speed = pygame.Vector2(0, 0)
-            else:
-                count += 1
-                if count == len(self.Balls):
-                    self.static = True
-    
+        # 正常计算球体位置
+        if not self.static:# 击球后才运行
+            count = 0
+            # 球类移动
+            for ball in self.Balls:
+                if ball.speed:# 只针对有速度的球
+                    obj, typ = ball.move(self.Balls,self.Sides,self.Holes)# 让球动起来
+                    if typ == 'self':# 有球进洞了
+                        self.Balls.remove(obj)
+                        self.Balls_get.append(obj)
+                        obj.speed = pygame.Vector2(0, 0)
+                        if obj == self.whiteBall:# 是白球进洞
+                            self.whiteBall = None
+                            self.charge = False
+                            self.Balls_get.remove(obj)
+                            self.baiqiu = True
+                            self.aiming = 'left'
+                    ball.fric(0.99)
+                    if ball.speed.length() <= 0.2:
+                        ball.speed = pygame.Vector2(0, 0)
+                else:
+                    count += 1
+                    if count == len(self.Balls):
+                        self.static = True
+                        if self.aiming == 'right':
+                            self.createAimLine(mousePos)
+        # 计算瞄准线位置
+        if self.aiming == 'right' and self.testBall:
+            obj, typ = self.testBall.simulateShoot(self.Balls,self.Sides,self.Holes)
+            if typ == 'ball':
+                pass
+            elif typ == 'side':
+                pass
+            elif typ == 'self':
+                pass
         
         # 球杆旋转
         if self.whiteBall:# 如果白球在场
@@ -137,13 +150,14 @@ class Game(object):
                 # 释放球杆
                 dv = backSpeed / num_steps # 每份的移动速度
                 centerPos,angle = self.Stick.back(self.sc, dv, mousePos)
-                
                 # 击打白球
                 if self.whiteBall.pos.distance_to(centerPos) <= 1:
                     rate = 10 * xuli_time
                     self.whiteBall.speed[0] = rate * math.cos(angle)
                     self.whiteBall.speed[1] = rate * math.sin(angle)
                     self.charge = False
+                    self.static = False
+                    self.testBall = None
 
     def renderFont(self,fps):
         # FPS显示
@@ -162,18 +176,26 @@ class Game(object):
             
     def pause(self):
         self.paused = True
-        
-    def aim(self,mousePos):
+     
+    def createAimLine(self,mousePos):
+        if self.whiteBall:
+            angle = math.atan2(mousePos[1]-self.whiteBall.pos[1],mousePos[0]-self.whiteBall.pos[0])
+            testBall_pos = (self.whiteBall.pos[0] + self.whiteBall.radius * 2 * math.cos(angle) + 1,
+                            self.whiteBall.pos[1] + self.whiteBall.radius * 2 * math.sin(angle) + 1)
+            self.testBall = Ball(testBall_pos,0)
+            self.testBall.speed[0] = 1000 * math.cos(angle)
+            self.testBall.speed[1] = 1000 * math.sin(angle)
+    
+    def drawAimLine(self,mousePos):
         if self.aiming == 'right':# 右键瞄准
-            pass
-            # angle = math.atan2(mousePos[1]-self.whiteBall.pos[1],mousePos[0]-self.whiteBall.pos[0])
-            # testBall_pos = (self.whiteBall.pos[0] + self.whiteBall.radius * 2 * math.cos(angle),
-            #                 self.whiteBall.pos[1] + self.whiteBall.radius * 2 * math.sin(angle))
-            # self.testBall = Ball(testBall_pos,0)
-            # self.testBall.speed[0] = 10 * math.cos(angle)
-            # self.testBall.speed[1] = 10 * math.sin(angle)
-            # self.testBall.move(self.Balls,self.Sides,self.Holes)
-            # pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, testBall_pos, 2)
+            collidePos = self.testBall.pos
+            # 创建圆环
+            pygame.draw.circle(self.tpsc, WHITE, collidePos, self.whiteBall.radius)
+            pygame.draw.circle(self.tpsc, TRANSPARENT, collidePos, self.whiteBall.radius-2)
+            self.sc.blit(self.tpsc, (0, 0))
+            # 连线
+            pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, collidePos, 2)
+
 
         elif self.aiming == 'left':# 左键瞄准
             # 创建圆环
@@ -194,7 +216,8 @@ class Game(object):
     def placeWhiteBall(self,mousePos):
         whiteBall = Ball(mousePos,0)
         self.Balls.insert(0,whiteBall)
-        
+        self.whiteBall = whiteBall
+
     def inCourt(self,mode,mousePos):
         self.testBall = Ball(mousePos,0)
         
