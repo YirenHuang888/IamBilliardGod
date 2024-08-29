@@ -38,6 +38,7 @@ class Game(object):
         self.Holes = []
         self.Balls_get = []
         self.score = 0
+        self.cldPos = []
         
         # 初始化球类
         self.testBall = None
@@ -116,16 +117,22 @@ class Game(object):
                     if count == len(self.Balls):
                         self.static = True
                         if self.aiming == 'right':
-                            self.createAimLine(mousePos)
+                            self.createTestBall(mousePos,1)
         # 计算瞄准线位置
         if self.aiming == 'right' and self.testBall:
-            obj, typ = self.testBall.simulateShoot(self.Balls,self.Sides,self.Holes)
-            if typ == 'ball':
-                pass
-            elif typ == 'side':
-                pass
-            elif typ == 'self':
-                pass
+            typ, obj, tbpos, tbspd, objspd = self.testBall.simulateShoot(self.Balls,self.Sides,self.Holes)
+            if typ:
+                self.cldPos.append([self.whiteBall.pos, tbpos])
+                self.testBall = None
+                if typ == 'ball':
+                    newTbPos = tbpos + 30 * tbspd.normalize()
+                    newObjPos = obj.pos + 30 * objspd.normalize()
+                    self.cldPos.append([tbpos, newTbPos])
+                    self.cldPos.append([obj.pos, newObjPos])
+                elif typ == 'side':
+                    pass
+                elif typ == 'self':
+                    pass
         
         # 球杆旋转
         if self.whiteBall:# 如果白球在场
@@ -159,7 +166,6 @@ class Game(object):
                     self.whiteBall.speed[1] = rate * math.sin(angle)
                     self.charge = False
                     self.static = False
-                    self.testBall = None
 
     def renderFont(self,fps):
         # FPS显示
@@ -178,27 +184,34 @@ class Game(object):
     def pause(self):
         self.paused = True
      
-    def createAimLine(self,mousePos):
-        if self.whiteBall:
-            angle = math.atan2(mousePos[1]-self.whiteBall.pos[1],mousePos[0]-self.whiteBall.pos[0])
-            self.testBall = Ball(self.whiteBall.pos,0)
-            self.testBall.speed[0] = 1000 * math.cos(angle)
-            self.testBall.speed[1] = 1000 * math.sin(angle)
-    
-    def drawAimLine(self,mousePos):
+    def createTestBall(self, aimPos, mode):
+        self.cldPos.clear()
+        if mode == 1:
+            if self.whiteBall:
+                angle = math.atan2(aimPos[1]-self.whiteBall.pos[1],aimPos[0]-self.whiteBall.pos[0])
+                self.testBall = Ball(self.whiteBall.pos,0)
+                self.testBall.speed[0] = 1000 * math.cos(angle)
+                self.testBall.speed[1] = 1000 * math.sin(angle)
+            
+        elif mode == 2:
+            pass
+            
+            
+            
+    def drawAimLine(self, mousePos):
         if self.aiming == 'right':# 右键瞄准
-            collidePos = self.testBall.pos
-            # 创建圆环
-            pygame.draw.circle(self.tpsc, WHITE, collidePos, self.whiteBall.radius)
-            pygame.draw.circle(self.tpsc, TRANSPARENT, collidePos, self.whiteBall.radius-2)
-            self.sc.blit(self.tpsc, (0, 0))
-            # 连线
-            pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, collidePos, 2)
+            for Pospair in self.cldPos: 
+                # 创建圆环
+                pygame.draw.circle(self.tpsc, WHITE, Pospair[1], 18)
+                pygame.draw.circle(self.tpsc, TRANSPARENT, Pospair[1], 18-2)
+                self.sc.blit(self.tpsc, (0, 0))
+                # 连线
+                pygame.draw.line(self.sc, WHITE, Pospair[0], Pospair[1], 2)
 
         elif self.aiming == 'left':# 左键瞄准
             # 创建圆环
-            pygame.draw.circle(self.tpsc, WHITE, mousePos, self.whiteBall.radius)
-            pygame.draw.circle(self.tpsc, TRANSPARENT, mousePos, self.whiteBall.radius-2)
+            pygame.draw.circle(self.tpsc, WHITE, mousePos, 18)
+            pygame.draw.circle(self.tpsc, TRANSPARENT, mousePos, 18-2)
             self.sc.blit(self.tpsc, (0, 0))
             # 连线
             pygame.draw.line(self.sc, WHITE, self.whiteBall.pos, mousePos, 2)
@@ -220,7 +233,7 @@ class Game(object):
         self.testBall = Ball(mousePos,0)
         
         side = self.testBall.collide_side(self.Sides)[0]
-        other_ball = self.testBall.collide_ball(self.Balls)[0]
+        other_ball = self.testBall.collide_ball(self.Balls)
         get = self.testBall.collide_hole(self.Holes)
         xoutrange = not bool(97.3835<self.testBall.pos.x<1269.9695)
         youtrange = not bool(91.9509<self.testBall.pos.y<676.1886)

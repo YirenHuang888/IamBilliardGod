@@ -38,6 +38,7 @@ while True:
             else:# 第n次出界
                 mousePos = lastMousePos
     
+    # 事件检测
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -57,15 +58,15 @@ while True:
             if btn == 3:# 鼠标右键按下
                 mousePos = pygame.mouse.get_pos()
                 game.aiming = 'right'
-                game.createAimLine(mousePos)
+                game.createTestBall(mousePos,1)
                 if game.doubleclick():
                     game.aiming = 'left'
             if btn == 4:# 滚轮上滑
                 mousePos = game.weitiao(mousePos,2)
-                game.createAimLine(mousePos)
+                game.createTestBall(mousePos,1)
             if btn == 5:# 滚轮下滑
                 mousePos = game.weitiao(mousePos,1)
-                game.createAimLine(mousePos)
+                game.createTestBall(mousePos,1)
         elif event.type == pygame.MOUSEBUTTONUP:
                 if game.charge:# 鼠标左键已被按下过
                     game.charge = 'Restore'
@@ -75,6 +76,10 @@ while True:
                 game.paused = not game.paused
             elif event.key == pygame.K_RETURN:# 回车重启游戏
                 game.startGame()
+            if event.key == pygame.K_1 and pygame.key.get_mods() & pygame.KMOD_LALT:# 同时按下Alt+1
+                print('秘籍已启用！')
+                pass
+    
     # 暂停
     if game.paused:
         continue

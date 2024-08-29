@@ -5,6 +5,7 @@ Created on Wed Jul 24 11:53:32 2024
 @author: Administrator
 """
 import pygame
+import numpy as np
 from const import BLACK,WHITE
 from data_dic import ball_data
 
@@ -26,15 +27,15 @@ class Ball():
             #边界碰撞
             side,overlap = self.collide_side(side_group)
             if side:
-                self.speed_exchange3(side)
                 self.getawayfromSide(overlap,side)# 防重叠
+                self.speed_exchange3(side)
                 self.fric(0.95)
                 return side, 'side'
             #球体间碰撞
-            other_ball,overlap = self.collide_ball(ball_group)
+            other_ball = self.collide_ball(ball_group)
             if other_ball:
+                self.getawayfromBall(other_ball)# 防重叠
                 self.speed_exchange2(other_ball)
-                self.getawayfromBall(overlap,other_ball)# 防重叠
                 self.fric(0.95)
                 return other_ball, 'ball'
             #进洞判定,进洞则返回要被删除的球
@@ -46,20 +47,47 @@ class Ball():
     def collide_ball(self, group):
         for other_ball in group:
             if other_ball.id != self.id and self.pos.distance_to(other_ball.pos) <= self.radius * 2 :
-                overlap = self.radius * 2 - self.pos.distance_to(other_ball.pos)
-                return other_ball,overlap
-        return None,0
+                return other_ball
+        return None
     
-    def getawayfromBall(self,overlap,other_ball):
-            normal = self.pos - other_ball.pos
-            normal = normal.normalize()
-            self.pos += overlap * normal
+    def find_intersection_time(self, pos1, vel1, pos2, vel2, radius1, radius2):
+        """
+        计算两个圆刚刚相交的时间。
+        """
+        # 计算相对速度和相对位置
+        rel_vel = vel2 - vel1
+        rel_pos = pos2 - pos1
+        # 计算二次方程的系数
+        A = rel_vel.dot(rel_vel)
+        B = 2 * rel_pos.dot(rel_vel)
+        C = rel_pos.dot(rel_pos) - (radius1 + radius2) ** 2
+        # 计算方程的根
+        discriminant = B**2 - 4 * A * C
+        if discriminant < 0:
+            return None  # 没有实数解，圆永远不会相交
+        sqrt_disc = np.sqrt(discriminant)
+        t1 = (-B - sqrt_disc) / (2 * A)
+        t2 = (-B + sqrt_disc) / (2 * A)
+        # 返回负的时间
+        return t1 if t1 < 0 else t2 if t2 < 0 else None
+
+    def calculate_positions_at_intersection(self, pos1, vel1, pos2, vel2, radius1, radius2):
+        """
+        计算两个圆刚刚相交时的位置。
+        """
+        t = self.find_intersection_time(pos1, vel1, pos2, vel2, radius1, radius2)
+        if t:
+            pos1_at_t = pos1 + vel1 * t
+            pos2_at_t = pos2 + vel2 * t
+            return pos1_at_t, pos2_at_t
+        return None, None
+    
+    def getawayfromBall(self, other_ball):
+        self.pos, other_ball.pos = self.calculate_positions_at_intersection(self.pos, self.speed, other_ball.pos, other_ball.speed, self.radius, other_ball.radius)
     
     def getawayfromSide(self,overlap,side):
         if side.IFarc:
-            normal = self.pos - side.pos
-            normal = normal.normalize()
-            self.pos += overlap * normal
+            self.pos, side.pos = self.calculate_positions_at_intersection(self.pos, self.speed, side.pos, side.speed, self.radius, side.radius)
         else:
             if side.toward == 'shu':
                 normal = pygame.Vector2(self.pos.x - side.xory,0)
@@ -143,19 +171,22 @@ class Ball():
             if side:
                 self.getawayfromSide(overlap,side)# 防重叠
                 self.speed = pygame.Vector2(0, 0)
-                return side, 'side'
+                return 'side', side, self.pos, None, None
             #球体间碰撞
-            other_ball,overlap = self.collide_ball(ball_group)
+            other_ball = self.collide_ball(ball_group)
             if other_ball:
-                self.getawayfromBall(overlap,other_ball)# 防重叠
-                self.speed = pygame.Vector2(0, 0)
-                return other_ball, 'ball'
+                self.getawayfromBall(other_ball)# 防重叠
+                self.speed = 10 * self.speed.normalize()
+                self.speed_exchange2(other_ball)
+                spd1,spd2 = self.speed,other_ball.speed
+                self.speed, other_ball.speed = pygame.Vector2(0,0), pygame.Vector2(0,0)
+                return 'ball', other_ball, self.pos, spd1, spd2
             #进洞判定,进洞则返回要被删除的球
             get = self.collide_hole(hole_group)
             if get:
                 self.speed = pygame.Vector2(0, 0)
-                return self, 'self'
-        return None, None
+                return 'self', self, self.pos, None, None
+        return None, None, None, None, None
 
 
 
