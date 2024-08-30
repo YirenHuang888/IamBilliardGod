@@ -19,7 +19,7 @@ class Ball():
         self.controlable = self.getBallData('CTRL')
     
     def move(self,ball_group,side_group,hole_group):
-        num_steps = 40  # 将每帧时间分解为40个小步长
+        num_steps = 45  # 将每帧时间分解为40个小步长
         for _ in range(num_steps):# 将1帧的运动再细分40份
             delta_x = self.speed / num_steps
             self.pos += delta_x
@@ -84,7 +84,7 @@ class Ball():
     
     def getawayfromBall(self, other_ball):
         self.pos, other_ball.pos = self.calculate_positions_at_intersection(self.pos, self.speed, other_ball.pos, other_ball.speed, self.radius, other_ball.radius)
-    
+        
     def getawayfromSide(self,overlap,side):
         if side.IFarc:
             self.pos, side.pos = self.calculate_positions_at_intersection(self.pos, self.speed, side.pos, side.speed, self.radius, side.radius)

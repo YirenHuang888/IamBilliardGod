@@ -32,13 +32,13 @@ class Game(object):
         self.baiqiu = False # 是否要摆球
         self.mouseOutside = False # 是否鼠标位于界外
         self.aiming = 'left' # 处于左键、右键瞄准状态
-        self.timing = []
-        self.Balls = []
-        self.Sides = []
-        self.Holes = []
-        self.Balls_get = []
-        self.score = 0
-        self.cldPos = []
+        self.timing = [] # 计算点击间隔，判断双击
+        self.Balls = [] # 球类
+        self.Sides = [] # 边界
+        self.Holes = [] # 球洞
+        self.Balls_get = [] # 进洞的球，算分
+        self.score = 0 # 分数
+        self.cldPos = [] # 用于绘制右键瞄准线
         
         # 初始化球类
         self.testBall = None
@@ -55,14 +55,14 @@ class Game(object):
         for holepos in HOLE:
             hole = Hole(holepos)
             self.Holes.append(hole)
-        # 初始化曲线边界
-        for arc in arcSide_data.values():
-            arcside = Side(True, arc)
-            self.Sides.append(arcside)
         # 初始化直线边界
         for line in lineSide_data.values():
             lineside = Side(False, line)
             self.Sides.append(lineside)
+        # 初始化曲线边界
+        for arc in arcSide_data.values():
+            arcside = Side(True, arc)
+            self.Sides.append(arcside)
             
     def draw(self,fps,mousePos):                
         # 背景图
@@ -122,13 +122,13 @@ class Game(object):
         if self.aiming == 'right' and self.testBall:
             typ, obj, tbpos, tbspd, objspd = self.testBall.simulateShoot(self.Balls,self.Sides,self.Holes)
             if typ:
-                self.cldPos.append([self.whiteBall.pos, tbpos])
+                self.cldPos.append([self.whiteBall.pos, tbpos, 1])
                 self.testBall = None
                 if typ == 'ball':
-                    newTbPos = tbpos + 30 * tbspd.normalize()
-                    newObjPos = obj.pos + 30 * objspd.normalize()
-                    self.cldPos.append([tbpos, newTbPos])
-                    self.cldPos.append([obj.pos, newObjPos])
+                    newTbPos = tbpos + 60 * tbspd.normalize()
+                    newObjPos = obj.pos + 60 * objspd.normalize()
+                    self.cldPos.append([tbpos, newTbPos, 0])
+                    self.cldPos.append([obj.pos, newObjPos, 0])
                 elif typ == 'side':
                     pass
                 elif typ == 'self':
@@ -192,19 +192,17 @@ class Game(object):
                 self.testBall = Ball(self.whiteBall.pos,0)
                 self.testBall.speed[0] = 1000 * math.cos(angle)
                 self.testBall.speed[1] = 1000 * math.sin(angle)
-            
         elif mode == 2:
             pass
-            
-            
             
     def drawAimLine(self, mousePos):
         if self.aiming == 'right':# 右键瞄准
             for Pospair in self.cldPos: 
-                # 创建圆环
-                pygame.draw.circle(self.tpsc, WHITE, Pospair[1], 18)
-                pygame.draw.circle(self.tpsc, TRANSPARENT, Pospair[1], 18-2)
-                self.sc.blit(self.tpsc, (0, 0))
+                if Pospair[2] == 1:
+                    # 创建圆环
+                    pygame.draw.circle(self.tpsc, WHITE, Pospair[1], 18)
+                    pygame.draw.circle(self.tpsc, TRANSPARENT, Pospair[1], 18-2)
+                    self.sc.blit(self.tpsc, (0, 0))
                 # 连线
                 pygame.draw.line(self.sc, WHITE, Pospair[0], Pospair[1], 2)
 
